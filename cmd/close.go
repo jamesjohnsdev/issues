@@ -15,23 +15,18 @@ var closeCmd = &cobra.Command{
 	Short: "Mark an issue as closed",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var number int
-		if _, err := fmt.Sscanf(args[0], "%d", &number); err != nil {
-			return fmt.Errorf("invalid issue number: %s", args[0])
-		}
-
 		root, err := issuesRoot()
 		if err != nil {
 			return err
 		}
 
-		iss, err := findLocalByNumber(root, number)
+		iss, err := findLocalByID(root, args[0])
 		if err != nil {
 			return err
 		}
 
 		if iss.State == "closed" {
-			fmt.Printf("Issue #%d is already closed.\n", number)
+			fmt.Printf("Issue %s is already closed.\n", args[0])
 			return nil
 		}
 
@@ -48,7 +43,7 @@ var closeCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("%s #%d: %s\n", color.GreenString("Closed"), number, iss.Title)
+		fmt.Printf("%s %s: %s\n", color.GreenString("Closed"), args[0], iss.Title)
 		return nil
 	},
 }
