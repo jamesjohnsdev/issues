@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
@@ -26,7 +27,7 @@ var initCmd = &cobra.Command{
 				return err
 			}
 		}
-		fmt.Printf("Initialized %s\n", root)
+		fmt.Printf("%s %s\n", color.GreenString("Initialized"), root)
 		return nil
 	},
 }

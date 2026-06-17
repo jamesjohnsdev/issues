@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/fatih/color"
 	"github.com/jamesjohnsdev/issues/internal/issue"
 	"github.com/spf13/cobra"
 )
@@ -57,7 +58,7 @@ var createCmd = &cobra.Command{
 			_ = c.Run()
 		}
 
-		fmt.Printf("Created %s\n", path)
+		fmt.Printf("%s %s\n", color.GreenString("Created"), path)
 		return nil
 	},
 }

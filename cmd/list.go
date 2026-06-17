@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/fatih/color"
 	"github.com/jamesjohnsdev/issues/internal/issue"
 	"github.com/spf13/cobra"
 )
@@ -31,8 +32,18 @@ var listCmd = &cobra.Command{
 			fmt.Println("No local issues. Run `issue pull` to fetch from GitHub.")
 			return nil
 		}
+		idColor := color.New(color.FgCyan)
+		openColor := color.New(color.FgGreen)
+		closedColor := color.New(color.FgHiBlack)
 		for _, iss := range filtered {
-			fmt.Printf("%-8s %-8s %s\n", idFromPath(iss.Path), "["+iss.State+"]", iss.Title)
+			id := idColor.Sprintf("%-8s", idFromPath(iss.Path))
+			var state string
+			if iss.State == "open" {
+				state = openColor.Sprintf("%-8s", "["+iss.State+"]")
+			} else {
+				state = closedColor.Sprintf("%-8s", "["+iss.State+"]")
+			}
+			fmt.Printf("%s %s %s\n", id, state, iss.Title)
 		}
 		return nil
 	},

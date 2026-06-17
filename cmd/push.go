@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/jamesjohnsdev/issues/internal/gh"
 	"github.com/jamesjohnsdev/issues/internal/issue"
 	"github.com/spf13/cobra"
@@ -59,9 +60,9 @@ var pushCmd = &cobra.Command{
 			}
 		}
 		if pushed == 0 {
-			fmt.Println("Nothing to push.")
+			color.New(color.FgHiBlack).Println("Nothing to push.")
 		} else {
-			fmt.Printf("Pushed %d issue(s)\n", pushed)
+			fmt.Printf("%s %d issue(s)\n", color.GreenString("Pushed"), pushed)
 		}
 		return nil
 	},
@@ -85,7 +86,7 @@ func pushOne(root string, iss *issue.Issue) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Created #%d: %s\n", number, iss.Title)
+		fmt.Printf("%s #%d: %s\n", color.GreenString("Created"), number, iss.Title)
 		return pullOne(root, remote)
 	}
 
@@ -104,6 +105,6 @@ func pushOne(root string, iss *issue.Issue) error {
 		return err
 	}
 
-	fmt.Printf("Pushed #%d: %s\n", iss.Number, iss.Title)
+	fmt.Printf("%s #%d: %s\n", color.GreenString("Pushed"), iss.Number, iss.Title)
 	return nil
 }

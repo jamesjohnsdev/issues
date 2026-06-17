@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/jamesjohnsdev/issues/internal/gh"
 	"github.com/jamesjohnsdev/issues/internal/issue"
 	"github.com/spf13/cobra"
@@ -43,7 +44,7 @@ var pullCmd = &cobra.Command{
 				return err
 			}
 		}
-		fmt.Printf("Pulled %d issue(s)\n", len(remotes))
+		fmt.Printf("%s %d issue(s)\n", color.GreenString("Pulled"), len(remotes))
 		return nil
 	},
 }
