@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/jamesjohnsdev/issues/internal/gh"
 	"github.com/spf13/cobra"
 )
@@ -27,7 +28,7 @@ var syncCmd = &cobra.Command{
 		newCount := 0
 		for _, iss := range local {
 			if iss.Number == 0 {
-				fmt.Printf("Pushing new issue: %s\n", iss.Title)
+				fmt.Printf("Pushing new issue: %s\n", color.CyanString(iss.Title))
 				if err := pushOne(root, iss); err != nil {
 					return err
 				}
@@ -35,7 +36,7 @@ var syncCmd = &cobra.Command{
 			}
 		}
 		if newCount > 0 {
-			fmt.Printf("Pushed %d new issue(s)\n\n", newCount)
+			fmt.Printf("%s %d new issue(s)\n\n", color.GreenString("Pushed"), newCount)
 		}
 
 		// Reload — T-issues now have real numbers
@@ -60,14 +61,14 @@ var syncCmd = &cobra.Command{
 		}
 
 		if len(modified) > 0 {
-			fmt.Println("Warning: the following issues have local changes that will be overwritten by pull:")
+			fmt.Printf("%s the following issues have local changes that will be overwritten by pull:\n", color.YellowString("Warning:"))
 			for _, m := range modified {
-				fmt.Println(m)
+				fmt.Println(color.YellowString(m))
 			}
 			fmt.Print("\nContinue? [y/N] ")
 			line, _ := bufio.NewReader(os.Stdin).ReadString('\n')
 			if strings.ToLower(strings.TrimSpace(line)) != "y" {
-				fmt.Println("Aborted. Use `issue push` to send your local changes to GitHub first.")
+				fmt.Println(color.YellowString("Aborted.") + " Use `issue push` to send your local changes to GitHub first.")
 				return nil
 			}
 			fmt.Println()
@@ -83,7 +84,7 @@ var syncCmd = &cobra.Command{
 				return err
 			}
 		}
-		fmt.Printf("Synced %d issue(s) from GitHub\n", len(remotes))
+		fmt.Printf("%s %d issue(s) from GitHub\n", color.GreenString("Synced"), len(remotes))
 		return nil
 	},
 }
