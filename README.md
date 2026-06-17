@@ -16,6 +16,7 @@ also for AI augmented workflows, where agents can have a source for development.
 - `issues create <title>` - creates a new issue in the current directory.
 - `issues create -e` - opens a blank issue in the editor without requiring a title upfront (discarded if saved with no title).
 - `issues view <number>` - opens an issue by number in the default editor.
+- `issues close <number>` - marks an issue as closed.
 - `issues sync` - syncs all issues in the current directory using the GitHub CLI.
 - `issues help` - shows help for the `issues` command.
 

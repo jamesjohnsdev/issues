@@ -10,8 +10,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var completeCmd = &cobra.Command{
-	Use:   "complete <number>",
+var closeCmd = &cobra.Command{
+	Use:   "close <number>",
 	Short: "Mark an issue as closed",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -48,7 +48,7 @@ var completeCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("%s #%d: %s\n", color.GreenString("Completed"), number, iss.Title)
+		fmt.Printf("%s #%d: %s\n", color.GreenString("Closed"), number, iss.Title)
 		return nil
 	},
 }
