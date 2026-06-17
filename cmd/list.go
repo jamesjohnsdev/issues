@@ -3,8 +3,11 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/jamesjohnsdev/issues/internal/issue"
 	"github.com/spf13/cobra"
 )
+
+var listAll, listClosed bool
 
 var listCmd = &cobra.Command{
 	Use:   "list",
@@ -18,13 +21,24 @@ var listCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		if len(issues) == 0 {
+		var filtered []*issue.Issue
+		for _, iss := range issues {
+			if listAll || (listClosed && iss.State == "closed") || (!listClosed && iss.State == "open") {
+				filtered = append(filtered, iss)
+			}
+		}
+		if len(filtered) == 0 {
 			fmt.Println("No local issues. Run `issue pull` to fetch from GitHub.")
 			return nil
 		}
-		for _, iss := range issues {
+		for _, iss := range filtered {
 			fmt.Printf("%-8s %-8s %s\n", idFromPath(iss.Path), "["+iss.State+"]", iss.Title)
 		}
 		return nil
 	},
+}
+
+func init() {
+	listCmd.Flags().BoolVar(&listAll, "all", false, "show open and closed issues")
+	listCmd.Flags().BoolVar(&listClosed, "closed", false, "show only closed issues")
 }
