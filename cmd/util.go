@@ -19,7 +19,7 @@ func issuesRoot() (string, error) {
 	}
 	path := filepath.Join(cwd, issuesDirName)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return "", errors.New("no .issues directory — run `issue init` first")
+		return "", errors.New("no .issues directory — run `issues init` first")
 	}
 	return path, nil
 }
