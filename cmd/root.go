@@ -62,5 +62,5 @@ Use "{{.CommandPath}} [command] --help" for more information about a command.{{e
 	rootCmd.AddCommand(pushCmd)
 	rootCmd.AddCommand(pullCmd)
 	rootCmd.AddCommand(viewCmd)
-	rootCmd.AddCommand(completeCmd)
+	rootCmd.AddCommand(closeCmd)
 }
