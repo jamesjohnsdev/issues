@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/jamesjohnsdev/issues/internal/issue"
@@ -28,22 +30,71 @@ var listCmd = &cobra.Command{
 				filtered = append(filtered, iss)
 			}
 		}
+		sort.Slice(filtered, func(i, j int) bool {
+			ni, nj := filtered[i].Number, filtered[j].Number
+			// GitHub issues (Number > 0) sort before local T-issues (Number == 0)
+			if (ni == 0) != (nj == 0) {
+				return ni != 0
+			}
+			if ni != 0 {
+				return ni < nj
+			}
+			// Both local: compare T-numbers
+			var ti, tj int
+			fmt.Sscanf(idFromPath(filtered[i].Path), "T%d", &ti)
+			fmt.Sscanf(idFromPath(filtered[j].Path), "T%d", &tj)
+			return ti < tj
+		})
+
 		if len(filtered) == 0 {
-			fmt.Println("No local issues. Run `issue pull` to fetch from GitHub.")
+			fmt.Println("No local issues. Run `issues pull` to fetch from GitHub.")
 			return nil
 		}
-		idColor := color.New(color.FgCyan)
-		openColor := color.New(color.FgGreen)
-		closedColor := color.New(color.FgHiBlack)
+
+		bold := color.New(color.Bold).SprintfFunc()
+		idColor := color.New(color.FgCyan).SprintfFunc()
+		localIDColor := color.New(color.FgYellow).SprintfFunc()
+		openColor := color.New(color.FgGreen).SprintfFunc()
+		closedColor := color.New(color.FgHiBlack).SprintfFunc()
+
+		// Calculate column widths from plain strings, before any color codes are applied
+		idW, stateW := len("ID"), len("State")
 		for _, iss := range filtered {
-			id := idColor.Sprintf("%-8s", idFromPath(iss.Path))
+			if n := len(idFromPath(iss.Path)); n > idW {
+				idW = n
+			}
+			if n := len(iss.State); n > stateW {
+				stateW = n
+			}
+		}
+
+		const pad = "  "
+
+		fmt.Println()
+		fmt.Printf("%s%s  %s  %s\n", pad,
+			bold("%-*s", idW, "ID"),
+			bold("%-*s", stateW, "State"),
+			bold("Title"),
+		)
+		fmt.Printf("%s%s  %s  %s\n", pad,
+			strings.Repeat("─", idW),
+			strings.Repeat("─", stateW),
+			strings.Repeat("─", 33),
+		)
+		for _, iss := range filtered {
+			var id string
+			if iss.Number == 0 {
+				id = localIDColor("%-*s", idW, idFromPath(iss.Path))
+			} else {
+				id = idColor("%-*s", idW, idFromPath(iss.Path))
+			}
 			var state string
 			if iss.State == "open" {
-				state = openColor.Sprintf("%-8s", "["+iss.State+"]")
+				state = openColor("%-*s", stateW, iss.State)
 			} else {
-				state = closedColor.Sprintf("%-8s", "["+iss.State+"]")
+				state = closedColor("%-*s", stateW, iss.State)
 			}
-			fmt.Printf("%s %s %s\n", id, state, iss.Title)
+			fmt.Printf("%s%s  %s  %s\n", pad, id, state, iss.Title)
 		}
 		return nil
 	},
