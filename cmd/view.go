@@ -13,17 +13,12 @@ var viewCmd = &cobra.Command{
 	Short: "Open an issue in the default editor",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var number int
-		if _, err := fmt.Sscanf(args[0], "%d", &number); err != nil {
-			return fmt.Errorf("invalid issue number: %s", args[0])
-		}
-
 		root, err := issuesRoot()
 		if err != nil {
 			return err
 		}
 
-		iss, err := findLocalByNumber(root, number)
+		iss, err := findLocalByID(root, args[0])
 		if err != nil {
 			return err
 		}

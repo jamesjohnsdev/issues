@@ -23,11 +23,7 @@ var pushCmd = &cobra.Command{
 		}
 
 		if len(args) == 1 {
-			var number int
-			if _, err := fmt.Sscanf(args[0], "%d", &number); err != nil {
-				return fmt.Errorf("invalid issue number: %s", args[0])
-			}
-			iss, err := findLocalByNumber(root, number)
+			iss, err := findLocalByID(root, args[0])
 			if err != nil {
 				return err
 			}

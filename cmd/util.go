@@ -72,6 +72,36 @@ func findLocalByNumber(root string, number int) (*issue.Issue, error) {
 	return nil, fmt.Errorf("issue #%d not found locally", number)
 }
 
+// findLocalByID accepts either a plain integer ("42") or a T-prefixed local ID ("T1").
+func findLocalByID(root, id string) (*issue.Issue, error) {
+	issues, err := loadAllLocal(root)
+	if err != nil {
+		return nil, err
+	}
+
+	// T-prefixed local issue
+	if strings.HasPrefix(strings.ToUpper(id), "T") {
+		for _, iss := range issues {
+			if strings.EqualFold(idFromPath(iss.Path), id) {
+				return iss, nil
+			}
+		}
+		return nil, fmt.Errorf("issue %s not found locally", id)
+	}
+
+	// GitHub issue number
+	var number int
+	if _, err := fmt.Sscanf(id, "%d", &number); err != nil {
+		return nil, fmt.Errorf("invalid issue id: %s", id)
+	}
+	for _, iss := range issues {
+		if iss.Number == number {
+			return iss, nil
+		}
+	}
+	return nil, fmt.Errorf("issue #%d not found locally", number)
+}
+
 // idFromPath extracts the ID prefix ("T1" or "42") from a filename like "T1-my-issue.md".
 func idFromPath(path string) string {
 	base := strings.TrimSuffix(filepath.Base(path), ".md")
