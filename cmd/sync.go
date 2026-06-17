@@ -68,7 +68,7 @@ var syncCmd = &cobra.Command{
 			fmt.Print("\nContinue? [y/N] ")
 			line, _ := bufio.NewReader(os.Stdin).ReadString('\n')
 			if strings.ToLower(strings.TrimSpace(line)) != "y" {
-				fmt.Println(color.YellowString("Aborted.") + " Use `issue push` to send your local changes to GitHub first.")
+				fmt.Println(color.YellowString("Aborted.") + " Use `issues push` to send your local changes to GitHub first.")
 				return nil
 			}
 			fmt.Println()
