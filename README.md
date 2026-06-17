@@ -14,6 +14,7 @@ also for AI augmented workflows, where agents can have a source for development.
 - `issue init` - creates a new `.issues` directory in the current directory.
 - `issue list` - lists all issues in the current directory.
 - `issue create` - creates a new issue in the current directory.
+- `issue view <number>` - opens an issue by number in the default editor.
 - `issue sync` - syncs all issues in the current directory using the GitHub CLI.
 - `issue help`` - shows help for the `issue` command.
 
