@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -31,7 +32,8 @@ var viewCmd = &cobra.Command{
 			return fmt.Errorf("no editor set: define $VISUAL or $EDITOR")
 		}
 
-		c := exec.Command(editor, iss.Path)
+		parts := strings.Fields(editor)
+		c := exec.Command(parts[0], append(parts[1:], iss.Path)...)
 		c.Stdin = os.Stdin
 		c.Stdout = os.Stdout
 		c.Stderr = os.Stderr
