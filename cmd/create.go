@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/jamesjohnsdev/issues/internal/issue"
@@ -18,7 +19,7 @@ var createCmd = &cobra.Command{
 	Short: "Create a new local issue",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if createEditorFlag {
-			return nil
+			return cobra.NoArgs(cmd, args)
 		}
 		return cobra.ExactArgs(1)(cmd, args)
 	},
@@ -66,10 +67,12 @@ var createCmd = &cobra.Command{
 			editor = os.Getenv("EDITOR")
 		}
 		if createEditorFlag && editor == "" {
+			_ = os.Remove(path)
 			return fmt.Errorf("no editor set: define $VISUAL or $EDITOR")
 		}
 		if editor != "" {
-			c := exec.Command(editor, path)
+			parts := strings.Fields(editor)
+			c := exec.Command(parts[0], append(parts[1:], path)...)
 			c.Stdin = os.Stdin
 			c.Stdout = os.Stdout
 			c.Stderr = os.Stderr
