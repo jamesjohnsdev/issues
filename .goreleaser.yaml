@@ -1,0 +1,47 @@
+version: 2
+
+before:
+  hooks:
+    - make man
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+archives:
+  - formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    files:
+      - man/*.1
+
+nfpms:
+  - package_name: issues
+    homepage: https://github.com/jamesjohnsdev/issues
+    description: Local GitHub issue management
+    maintainer: James Johns <192176108+jamesjohnsdev@users.noreply.github.com>
+    license: MIT
+    formats:
+      - deb
+    contents:
+      - src: man/*.1
+        dst: /usr/share/man/man1/
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  use: github
