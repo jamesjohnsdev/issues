@@ -104,29 +104,31 @@ var createCmd = &cobra.Command{
 				openEditor = false
 			}
 
-			labelsResp, err := prompt("Labels (comma-separated, Enter to skip): ")
-			if err != nil {
-				return err
-			}
-			for _, l := range strings.Split(labelsResp, ",") {
-				if l := strings.TrimSpace(l); l != "" {
-					iss.Labels = append(iss.Labels, l)
+			if !openEditor {
+				labelsResp, err := prompt("Labels (comma-separated, Enter to skip): ")
+				if err != nil {
+					return err
 				}
-			}
-
-			assigneesResp, err := prompt("Assignees (comma-separated, Enter to skip): ")
-			if err != nil {
-				return err
-			}
-			for _, a := range strings.Split(assigneesResp, ",") {
-				if a := strings.TrimSpace(a); a != "" {
-					iss.Assignees = append(iss.Assignees, a)
+				for _, l := range strings.Split(labelsResp, ",") {
+					if l := strings.TrimSpace(l); l != "" {
+						iss.Labels = append(iss.Labels, l)
+					}
 				}
-			}
 
-			iss.Milestone, err = prompt("Milestone (Enter to skip): ")
-			if err != nil {
-				return err
+				assigneesResp, err := prompt("Assignees (comma-separated, Enter to skip): ")
+				if err != nil {
+					return err
+				}
+				for _, a := range strings.Split(assigneesResp, ",") {
+					if a := strings.TrimSpace(a); a != "" {
+						iss.Assignees = append(iss.Assignees, a)
+					}
+				}
+
+				iss.Milestone, err = prompt("Milestone (Enter to skip): ")
+				if err != nil {
+					return err
+				}
 			}
 
 		default:
@@ -153,7 +155,9 @@ var createCmd = &cobra.Command{
 			c.Stdin = os.Stdin
 			c.Stdout = os.Stdout
 			c.Stderr = os.Stderr
-			_ = c.Run()
+			if err := c.Run(); err != nil {
+				return fmt.Errorf("editor exited with error: %w", err)
+			}
 		}
 
 		if createEditorFlag {

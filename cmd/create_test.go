@@ -255,7 +255,8 @@ func TestCreateInteractive(t *testing.T) {
 		t.Setenv("VISUAL", "")
 		t.Setenv("EDITOR", script)
 
-		injectStdin(t, "My Bug\ne\n\n\n\n")
+		// Only title + body "e" — no labels/assignees/milestone prompts should appear.
+		injectStdin(t, "My Bug\ne\n")
 		_ = captureStdout(t, func() {
 			if err := createCmd.RunE(createCmd, nil); err != nil {
 				t.Fatalf("unexpected error: %v", err)
@@ -272,6 +273,35 @@ func TestCreateInteractive(t *testing.T) {
 		}
 		if iss.Body == "" {
 			t.Error("expected non-empty body after editor wrote content")
+		}
+	})
+
+	t.Run("body e with editor skips labels assignees milestone prompts", func(t *testing.T) {
+		parent := makeProjectDir(t, nil)
+		chdirTo(t, parent)
+		resetCreateFlag(t)
+
+		script := filepath.Join(t.TempDir(), "editor.sh")
+		if err := os.WriteFile(script, []byte(
+			"#!/bin/sh\ncat > \"$1\" <<'EOF'\n---\ntitle: My Bug\nstate: open\n---\nEOF\n",
+		), 0755); err != nil {
+			t.Fatal(err)
+		}
+		t.Setenv("VISUAL", "")
+		t.Setenv("EDITOR", script)
+
+		// If Labels/Assignees/Milestone prompts were shown, this input would
+		// block waiting for three more lines. Completing without hanging
+		// confirms they are skipped.
+		injectStdin(t, "My Bug\ne\n")
+		_ = captureStdout(t, func() {
+			if err := createCmd.RunE(createCmd, nil); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+
+		if files := readMDFiles(t, openIssuesDir(t, parent)); len(files) != 1 {
+			t.Errorf("expected 1 file, got %d", len(files))
 		}
 	})
 
