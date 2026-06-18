@@ -9,7 +9,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "issue",
+	Use:   "issues",
 	Short: "Local GitHub issue management",
 }
 
