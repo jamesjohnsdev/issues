@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jamesjohnsdev/issues/internal/issue"
@@ -69,6 +70,67 @@ func FuzzFindLocalByID(f *testing.F) {
 		// On success, the returned issue must have a non-empty path.
 		if iss.Path == "" {
 			t.Errorf("findLocalByID(%q) returned issue with empty Path", id)
+		}
+	})
+}
+
+func FuzzCreateInteractive(f *testing.F) {
+	f.Add("Fix the bug", "", "", "", "")
+	f.Add("Add feature", "e", "bug,feature", "alice", "v2.0")
+	f.Add("", "", "", "", "")
+	f.Add("title: with colon", "", "l1, l2", "a, b", "ms 1")
+	f.Add(strings.Repeat("x", 200), "", "label", "", "")
+	f.Add("  ", "", "", "", "")
+	f.Add("Nö ASCII", "", "", "", "")
+	f.Add("a", "e", "", "", "")
+
+	f.Fuzz(func(t *testing.T, title, bodyResp, labels, assignees, milestone string) {
+		parent := makeProjectDir(t, nil)
+		chdirTo(t, parent)
+
+		orig := createEditorFlag
+		t.Cleanup(func() { createEditorFlag = orig })
+		createEditorFlag = false
+
+		t.Setenv("VISUAL", "")
+		t.Setenv("EDITOR", "")
+
+		// Strip embedded newlines from each field so they don't bleed into
+		// adjacent prompts.
+		clean := func(s string) string { return strings.ReplaceAll(s, "\n", " ") }
+		stdin := strings.Join([]string{
+			clean(title), clean(bodyResp), clean(labels), clean(assignees), clean(milestone),
+		}, "\n") + "\n"
+
+		injectStdin(t, stdin)
+		_ = captureStdout(t, func() {
+			_ = createCmd.RunE(createCmd, nil)
+		})
+
+		openDir := filepath.Join(parent, issuesDirName, "open")
+		files := readMDFiles(t, openDir)
+
+		wantTitle := strings.TrimSpace(title)
+		if wantTitle == "" {
+			if len(files) != 0 {
+				t.Errorf("empty title produced %d files, want 0", len(files))
+			}
+			return
+		}
+
+		if len(files) != 1 {
+			t.Fatalf("title %q produced %d files, want 1", title, len(files))
+		}
+
+		iss, err := issue.Parse(files[0])
+		if err != nil {
+			t.Fatalf("created file not parseable: %v", err)
+		}
+		if iss.Title != wantTitle {
+			t.Errorf("Title = %q, want %q", iss.Title, wantTitle)
+		}
+		if iss.State != "open" {
+			t.Errorf("State = %q, want open", iss.State)
 		}
 	})
 }
