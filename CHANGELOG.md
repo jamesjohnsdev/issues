@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.2](https://github.com/jamesjohnsdev/issues/compare/v0.0.1...v0.0.2) (2026-06-18)
+
+
+### Features
+
+* **create:** add stepwise interactive prompts when no args given ([1e54bc5](https://github.com/jamesjohnsdev/issues/commit/1e54bc551e5ea20321b820bad8609955728c9f49))
+
 ## [0.0.1](https://github.com/jamesjohnsdev/issues/compare/v0.0.0...v0.0.1) (2026-06-18)
 
 
