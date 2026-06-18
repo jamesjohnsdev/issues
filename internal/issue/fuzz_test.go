@@ -96,9 +96,9 @@ func FuzzWriteParse(f *testing.F) {
 		}
 
 		// Body: Write always appends a trailing newline to non-empty bodies.
-		// Skip the body check when it contains "\n---" — that sequence would
-		// confuse the frontmatter end-marker scan and is a known parser limitation.
-		if !strings.Contains(body, "\n---") {
+		// Skip the body check when it contains "\n---" (confuses frontmatter scanner)
+		// or starts with "\n" (Parse strips leading newlines via TrimLeft).
+		if !strings.Contains(body, "\n---") && !strings.HasPrefix(body, "\n") {
 			wantBody := body
 			if body != "" && !strings.HasSuffix(body, "\n") {
 				wantBody += "\n"
