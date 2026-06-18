@@ -20,6 +20,10 @@ func Execute() {
 	}
 }
 
+func Root() *cobra.Command {
+	return rootCmd
+}
+
 func init() {
 	bold := color.New(color.Bold).SprintFunc()
 	cobra.AddTemplateFunc("bold", bold)

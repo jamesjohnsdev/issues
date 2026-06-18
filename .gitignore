@@ -33,3 +33,6 @@ go.work.sum
 
 # Local issues data
 .issues/
+
+# Generated man pages
+man/
