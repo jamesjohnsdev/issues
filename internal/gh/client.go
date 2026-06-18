@@ -170,6 +170,14 @@ func Update(iss *issue.Issue) error {
 	return nil
 }
 
+// Delete permanently deletes a GitHub issue.
+func Delete(number int) error {
+	if _, err := run("gh", "issue", "delete", fmt.Sprintf("%d", number), "--yes"); err != nil {
+		return fmt.Errorf("gh issue delete %d: %w", number, err)
+	}
+	return nil
+}
+
 func Now() *time.Time {
 	t := time.Now().UTC().Truncate(time.Second)
 	return &t
