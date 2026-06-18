@@ -82,6 +82,42 @@ func chdirTo(t *testing.T, dir string) {
 	t.Cleanup(func() { _ = os.Chdir(orig) })
 }
 
+// injectStdin replaces os.Stdin with a reader containing content for the
+// duration of the test.
+func injectStdin(t *testing.T, content string) {
+	t.Helper()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.WriteString(content); err != nil {
+		t.Fatal(err)
+	}
+	w.Close()
+	old := os.Stdin
+	os.Stdin = r
+	t.Cleanup(func() {
+		os.Stdin = old
+		r.Close()
+	})
+}
+
+// readMDFiles returns absolute paths to all .md files directly inside dir.
+func readMDFiles(t *testing.T, dir string) []string {
+	t.Helper()
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var files []string
+	for _, e := range entries {
+		if !e.IsDir() && filepath.Ext(e.Name()) == ".md" {
+			files = append(files, filepath.Join(dir, e.Name()))
+		}
+	}
+	return files
+}
+
 // captureStdout runs fn and returns everything written to os.Stdout during its
 // execution.
 func captureStdout(t *testing.T, fn func()) string {
