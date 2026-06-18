@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.4](https://github.com/jamesjohnsdev/issues/compare/v0.0.3...v0.0.4) (2026-06-18)
+
+
+### Bug Fixes
+
+* editor opens when passing through e ([b85c97f](https://github.com/jamesjohnsdev/issues/commit/b85c97f633fd33a665edecd5ac96963ddca6ecee))
+
 ## [0.0.3](https://github.com/jamesjohnsdev/issues/compare/v0.0.2...v0.0.3) (2026-06-18)
 
 
