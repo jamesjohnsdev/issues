@@ -93,7 +93,9 @@ func captureStdout(t *testing.T, fn func()) string {
 	old := os.Stdout
 	os.Stdout = w
 	fn()
-	w.Close()
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
 	os.Stdout = old
 	var buf bytes.Buffer
 	if _, err := buf.ReadFrom(r); err != nil {
@@ -263,14 +265,14 @@ func TestFindLocalByID(t *testing.T) {
 		{"1", "First issue", false},
 		{"2", "Second issue", false},
 		{"10", "Tenth issue", false},
-		{"3", "Closed issue", false},  // finds closed issues
+		{"3", "Closed issue", false}, // finds closed issues
 		{"T1", "Local draft", false},
 		{"T2", "Another draft", false},
-		{"t1", "Local draft", false},  // case-insensitive T-prefix
+		{"t1", "Local draft", false}, // case-insensitive T-prefix
 		{"t2", "Another draft", false},
-		{"99", "", true},              // number not found
-		{"T99", "", true},             // T-id not found
-		{"abc", "", true},             // not numeric, not T-prefixed
+		{"99", "", true},  // number not found
+		{"T99", "", true}, // T-id not found
+		{"abc", "", true}, // not numeric, not T-prefixed
 	}
 
 	for _, tt := range tests {

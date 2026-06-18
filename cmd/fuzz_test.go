@@ -25,7 +25,11 @@ func FuzzFindLocalByID(f *testing.F) {
 	if err != nil {
 		f.Fatal(err)
 	}
-	f.Cleanup(func() { os.RemoveAll(root) })
+	f.Cleanup(func() {
+		if err := os.RemoveAll(root); err != nil {
+			f.Fatal(err)
+		}
+	})
 
 	for _, dir := range []string{
 		filepath.Join(root, "open"),

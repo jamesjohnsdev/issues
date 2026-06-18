@@ -36,7 +36,9 @@ var createCmd = &cobra.Command{
 		for _, e := range existing {
 			if e.Number == 0 {
 				var n int
-				fmt.Sscanf(idFromPath(e.Path), "T%d", &n)
+				if _, err := fmt.Sscanf(idFromPath(e.Path), "T%d", &n); err != nil {
+					return err
+				}
 				if n > maxT {
 					maxT = n
 				}
