@@ -59,7 +59,9 @@ func pullOne(root string, iss *issue.Issue) error {
 	// If the issue exists locally in a different location (e.g. state changed), remove the old file
 	existing, _ := findLocalByNumber(root, iss.Number)
 	if existing != nil && existing.Path != destPath {
-		os.Remove(existing.Path)
+		if err := os.Remove(existing.Path); err != nil {
+			return fmt.Errorf("removing old local issue: %w", err)
+		}
 	}
 
 	if err := issue.Write(destPath, iss); err != nil {

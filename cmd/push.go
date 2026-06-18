@@ -56,7 +56,9 @@ var pushCmd = &cobra.Command{
 			}
 		}
 		if pushed == 0 {
-			color.New(color.FgHiBlack).Println("Nothing to push.")
+			if _, err := color.New(color.FgHiBlack).Println("Nothing to push."); err != nil {
+				return err
+			}
 		} else {
 			fmt.Printf("%s %d issue(s)\n", color.GreenString("Pushed"), pushed)
 		}

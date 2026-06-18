@@ -114,7 +114,7 @@ func TestList(t *testing.T) {
 		if posFirst < 0 || posSecond < 0 || posTenth < 0 {
 			t.Fatalf("not all issues in output: %q", out)
 		}
-		if !(posFirst < posSecond && posSecond < posTenth) {
+		if posFirst >= posSecond || posSecond >= posTenth {
 			t.Errorf("wrong order: First@%d Second@%d Tenth@%d — want First < Second < Tenth",
 				posFirst, posSecond, posTenth)
 		}

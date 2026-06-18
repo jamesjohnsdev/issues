@@ -41,8 +41,12 @@ var listCmd = &cobra.Command{
 			}
 			// Both local: compare T-numbers
 			var ti, tj int
-			fmt.Sscanf(idFromPath(filtered[i].Path), "T%d", &ti)
-			fmt.Sscanf(idFromPath(filtered[j].Path), "T%d", &tj)
+			if _, err := fmt.Sscanf(idFromPath(filtered[i].Path), "T%d", &ti); err != nil {
+				return false
+			}
+			if _, err := fmt.Sscanf(idFromPath(filtered[j].Path), "T%d", &tj); err != nil {
+				return false
+			}
 			return ti < tj
 		})
 
