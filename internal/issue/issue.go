@@ -68,6 +68,53 @@ func Write(path string, iss *Issue) error {
 	return os.WriteFile(path, buf.Bytes(), 0644)
 }
 
+// WriteTemplate writes an issue file with all user-editable fields expanded
+// (even when empty) and a comment marking where the body begins. Used when
+// opening a new issue in the editor so the user sees the full schema.
+func WriteTemplate(path string, iss *Issue) error {
+	type tpl struct {
+		Title     string   `yaml:"title"`
+		State     string   `yaml:"state"`
+		Labels    []string `yaml:"labels"`
+		Assignees []string `yaml:"assignees"`
+		Milestone string   `yaml:"milestone"`
+	}
+	labels := iss.Labels
+	if labels == nil {
+		labels = []string{}
+	}
+	assignees := iss.Assignees
+	if assignees == nil {
+		assignees = []string{}
+	}
+	t := tpl{
+		Title:     iss.Title,
+		State:     iss.State,
+		Labels:    labels,
+		Assignees: assignees,
+		Milestone: iss.Milestone,
+	}
+	var buf bytes.Buffer
+	buf.WriteString("---\n")
+	enc := yaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+	if err := enc.Encode(t); err != nil {
+		return err
+	}
+	_ = enc.Close()
+	buf.WriteString("# Body goes below this line\n")
+	buf.WriteString("---\n")
+	if iss.Body != "" {
+		buf.WriteString("\n")
+		body := iss.Body
+		if !strings.HasSuffix(body, "\n") {
+			body += "\n"
+		}
+		buf.WriteString(body)
+	}
+	return os.WriteFile(path, buf.Bytes(), 0644)
+}
+
 func Filename(iss *Issue) string {
 	return fmt.Sprintf("%d-%s.md", iss.Number, Slug(iss.Title))
 }
