@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -15,13 +16,16 @@ import (
 var createEditorFlag bool
 
 var createCmd = &cobra.Command{
-	Use:   "create <title>",
+	Use:   "create [title]",
 	Short: "Create a new local issue",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if createEditorFlag {
 			return cobra.NoArgs(cmd, args)
 		}
-		return cobra.ExactArgs(1)(cmd, args)
+		if len(args) > 1 {
+			return fmt.Errorf("accepts at most 1 arg, received %d", len(args))
+		}
+		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		root, err := issuesRoot()
@@ -46,31 +50,98 @@ var createCmd = &cobra.Command{
 			}
 		}
 
-		var title, filename string
-		if createEditorFlag {
-			title = ""
-			filename = fmt.Sprintf("T%d-new-issue.md", maxT+1)
-		} else {
-			title = args[0]
-			filename = fmt.Sprintf("T%d-%s.md", maxT+1, issue.Slug(title))
+		editor := os.Getenv("VISUAL")
+		if editor == "" {
+			editor = os.Getenv("EDITOR")
 		}
 
-		iss := &issue.Issue{Title: title, State: "open"}
+		interactive := !createEditorFlag && len(args) == 0
+
+		var filename string
+		var openEditor bool
+		iss := &issue.Issue{State: "open"}
+
+		switch {
+		case createEditorFlag:
+			filename = fmt.Sprintf("T%d-new-issue.md", maxT+1)
+			openEditor = true
+			if editor == "" {
+				return fmt.Errorf("no editor set: define $VISUAL or $EDITOR")
+			}
+
+		case interactive:
+			reader := bufio.NewReader(os.Stdin)
+
+			prompt := func(label string) (string, error) {
+				fmt.Print(label)
+				line, err := reader.ReadString('\n')
+				return strings.TrimSpace(line), err
+			}
+
+			iss.Title, err = prompt("Title: ")
+			if err != nil {
+				return err
+			}
+			if iss.Title == "" {
+				fmt.Println(color.YellowString("Aborted.") + " No title, issue discarded.")
+				return nil
+			}
+			filename = fmt.Sprintf("T%d-%s.md", maxT+1, issue.Slug(iss.Title))
+
+			var bodyPrompt string
+			if editor != "" {
+				bodyPrompt = fmt.Sprintf("Body [(e) to launch %s, Enter to skip]: ", filepath.Base(editor))
+			} else {
+				bodyPrompt = "Body [Enter to skip]: "
+			}
+			bodyResp, err := prompt(bodyPrompt)
+			if err != nil {
+				return err
+			}
+			openEditor = strings.ToLower(bodyResp) == "e"
+			if openEditor && editor == "" {
+				fmt.Println(color.YellowString("No editor set") + " ($VISUAL/$EDITOR). Skipping body.")
+				openEditor = false
+			}
+
+			labelsResp, err := prompt("Labels (comma-separated, Enter to skip): ")
+			if err != nil {
+				return err
+			}
+			for _, l := range strings.Split(labelsResp, ",") {
+				if l := strings.TrimSpace(l); l != "" {
+					iss.Labels = append(iss.Labels, l)
+				}
+			}
+
+			assigneesResp, err := prompt("Assignees (comma-separated, Enter to skip): ")
+			if err != nil {
+				return err
+			}
+			for _, a := range strings.Split(assigneesResp, ",") {
+				if a := strings.TrimSpace(a); a != "" {
+					iss.Assignees = append(iss.Assignees, a)
+				}
+			}
+
+			iss.Milestone, err = prompt("Milestone (Enter to skip): ")
+			if err != nil {
+				return err
+			}
+
+		default:
+			iss.Title = args[0]
+			filename = fmt.Sprintf("T%d-%s.md", maxT+1, issue.Slug(iss.Title))
+			openEditor = editor != ""
+		}
+
 		path := filepath.Join(openDir(root), filename)
 
 		if err := issue.Write(path, iss); err != nil {
 			return err
 		}
 
-		editor := os.Getenv("VISUAL")
-		if editor == "" {
-			editor = os.Getenv("EDITOR")
-		}
-		if createEditorFlag && editor == "" {
-			_ = os.Remove(path)
-			return fmt.Errorf("no editor set: define $VISUAL or $EDITOR")
-		}
-		if editor != "" {
+		if openEditor {
 			parts := strings.Fields(editor)
 			c := exec.Command(parts[0], append(parts[1:], path)...)
 			c.Stdin = os.Stdin
