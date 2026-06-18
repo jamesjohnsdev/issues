@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.3](https://github.com/jamesjohnsdev/issues/compare/v0.0.2...v0.0.3) (2026-06-18)
+
+
+### Features
+
+* **create:** show full schema and body marker in editor ([efce93b](https://github.com/jamesjohnsdev/issues/commit/efce93b0eb95eb27813231fece7f21a09bcc7971)), closes [#7](https://github.com/jamesjohnsdev/issues/issues/7)
+
+
+### Bug Fixes
+
+* unchecked errors ([83af814](https://github.com/jamesjohnsdev/issues/commit/83af814c17a0bc68c45055b5182930997070b803))
+
 ## [0.0.2](https://github.com/jamesjohnsdev/issues/compare/v0.0.1...v0.0.2) (2026-06-18)
 
 
