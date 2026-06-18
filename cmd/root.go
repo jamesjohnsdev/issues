@@ -9,8 +9,9 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "issues",
-	Short: "Local GitHub issue management",
+	Use:     "issues",
+	Short:   "Local GitHub issue management",
+	Version: Version,
 }
 
 func Execute() {
