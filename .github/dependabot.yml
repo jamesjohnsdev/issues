@@ -1,22 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: "gomod"
-    directory: "/transpiler"
-    schedule:
-      interval: "weekly"
-      day: "saturday"
-      time: "03:00"
-      timezone: "UTC"
-    cooldown:
-      default-days: 7
-    groups:
-      go-dependencies:
-        patterns:
-          - "*"
-    open-pull-requests-limit: 3
-
-  - package-ecosystem: "gomod"
-    directory: "/lsp"
+    directory: "/"
     schedule:
       interval: "weekly"
       day: "saturday"
