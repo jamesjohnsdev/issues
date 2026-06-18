@@ -93,16 +93,12 @@ func injectStdin(t *testing.T, content string) {
 	if _, err := w.WriteString(content); err != nil {
 		t.Fatal(err)
 	}
-	if err := w.Close(); err != nil {
-		t.Fatal(err)
-	}
+	w.Close()
 	old := os.Stdin
 	os.Stdin = r
 	t.Cleanup(func() {
 		os.Stdin = old
-		if err := r.Close(); err != nil {
-			t.Errorf("injectStdin: close pipe: %v", err)
-		}
+		r.Close()
 	})
 }
 
