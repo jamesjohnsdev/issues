@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/jamesjohnsdev/issues/internal/issue"
@@ -90,8 +91,8 @@ func findLocalByID(root, id string) (*issue.Issue, error) {
 	}
 
 	// GitHub issue number
-	var number int
-	if _, err := fmt.Sscanf(id, "%d", &number); err != nil {
+	number, err := strconv.Atoi(id)
+	if err != nil {
 		return nil, fmt.Errorf("invalid issue id: %s", id)
 	}
 	for _, iss := range issues {
