@@ -137,8 +137,14 @@ var createCmd = &cobra.Command{
 
 		path := filepath.Join(openDir(root), filename)
 
-		if err := issue.Write(path, iss); err != nil {
-			return err
+		var writeErr error
+		if openEditor {
+			writeErr = issue.WriteTemplate(path, iss)
+		} else {
+			writeErr = issue.Write(path, iss)
+		}
+		if writeErr != nil {
+			return writeErr
 		}
 
 		if openEditor {

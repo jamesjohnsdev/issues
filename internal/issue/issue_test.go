@@ -3,6 +3,7 @@ package issue
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -207,6 +208,63 @@ func TestWriteParse(t *testing.T) {
 			checkIssue(t, got, &tt.iss)
 		})
 	}
+}
+
+func TestWriteTemplate(t *testing.T) {
+	t.Run("empty issue shows all fields and separator", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "issue.md")
+		iss := &Issue{State: "open"}
+		if err := WriteTemplate(path, iss); err != nil {
+			t.Fatalf("WriteTemplate: %v", err)
+		}
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		content := string(raw)
+		for _, want := range []string{"title:", "state:", "labels:", "assignees:", "milestone:", "# Body goes below this line"} {
+			if !strings.Contains(content, want) {
+				t.Errorf("template missing %q\ngot:\n%s", want, content)
+			}
+		}
+	})
+
+	t.Run("parses back with empty body", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "issue.md")
+		iss := &Issue{Title: "Draft", State: "open"}
+		if err := WriteTemplate(path, iss); err != nil {
+			t.Fatalf("WriteTemplate: %v", err)
+		}
+		got, err := Parse(path)
+		if err != nil {
+			t.Fatalf("Parse: %v", err)
+		}
+		if got.Title != "Draft" {
+			t.Errorf("Title = %q, want %q", got.Title, "Draft")
+		}
+		if got.Body != "" {
+			t.Errorf("Body = %q, want empty", got.Body)
+		}
+	})
+
+	t.Run("preserves populated fields", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "issue.md")
+		iss := &Issue{
+			Title:     "My Issue",
+			State:     "open",
+			Labels:    []string{"bug", "urgent"},
+			Assignees: []string{"alice"},
+			Milestone: "v1.0",
+		}
+		if err := WriteTemplate(path, iss); err != nil {
+			t.Fatalf("WriteTemplate: %v", err)
+		}
+		got, err := Parse(path)
+		if err != nil {
+			t.Fatalf("Parse: %v", err)
+		}
+		checkIssue(t, got, iss)
+	})
 }
 
 func TestFilename(t *testing.T) {
