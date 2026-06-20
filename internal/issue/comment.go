@@ -7,11 +7,15 @@ import (
 	"time"
 )
 
-type Comment struct {
+type CommentMeta struct {
 	ID        string     `json:"id,omitempty"`
 	Author    string     `json:"author,omitempty"`
 	CreatedAt *time.Time `json:"created_at,omitempty"`
-	Body      string     `json:"body"`
+}
+
+type Comment struct {
+	Metadata *CommentMeta `json:"metadata,omitempty"`
+	Body     string       `json:"body"`
 }
 
 func CommentsFilename(iss *Issue) string {

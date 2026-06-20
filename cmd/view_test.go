@@ -56,7 +56,7 @@ func TestViewComments(t *testing.T) {
 
 		ts := time.Date(2026, 1, 15, 10, 30, 0, 0, time.UTC)
 		comments := []*issue.Comment{
-			{ID: "IC_abc", Author: "alice", CreatedAt: &ts, Body: "looks good"},
+			{Metadata: &issue.CommentMeta{ID: "IC_abc", Author: "alice", CreatedAt: &ts}, Body: "looks good"},
 		}
 		commentsFile := filepath.Join(parent, issuesDirName, "open", "1-my-issue.comments.json")
 		if err := issue.WriteComments(commentsFile, comments); err != nil {
@@ -119,7 +119,7 @@ func TestViewComments(t *testing.T) {
 
 		ts := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
 		comments := []*issue.Comment{
-			{ID: "IC_1", Author: "bob", CreatedAt: &ts, Body: "first"},
+			{Metadata: &issue.CommentMeta{ID: "IC_1", Author: "bob", CreatedAt: &ts}, Body: "first"},
 			{Body: "second draft"},
 		}
 		commentsFile := filepath.Join(parent, issuesDirName, "open", "1-my-issue.comments.json")

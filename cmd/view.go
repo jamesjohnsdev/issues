@@ -71,14 +71,14 @@ func printComments(iss *issue.Issue) error {
 		if i > 0 {
 			fmt.Println()
 		}
-		if c.ID == "" {
+		if c.Metadata == nil {
 			fmt.Printf("%s %s\n", bold("draft"), draft)
 		} else {
 			ts := ""
-			if c.CreatedAt != nil {
-				ts = " · " + c.CreatedAt.In(time.Local).Format("2 Jan 2006 15:04")
+			if c.Metadata.CreatedAt != nil {
+				ts = " · " + c.Metadata.CreatedAt.In(time.Local).Format("2 Jan 2006 15:04")
 			}
-			fmt.Printf("%s%s\n", bold(c.Author), dim(ts))
+			fmt.Printf("%s%s\n", bold(c.Metadata.Author), dim(ts))
 		}
 		fmt.Println(c.Body)
 	}

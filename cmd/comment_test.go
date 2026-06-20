@@ -82,8 +82,8 @@ func TestComment(t *testing.T) {
 		if len(comments) != 1 {
 			t.Fatalf("got %d comments, want 1", len(comments))
 		}
-		if comments[0].ID != "" {
-			t.Errorf("expected empty ID for draft, got %q", comments[0].ID)
+		if comments[0].Metadata != nil {
+			t.Errorf("expected nil Metadata for draft, got %+v", comments[0].Metadata)
 		}
 		if comments[0].Body != "hello world" {
 			t.Errorf("Body = %q, want %q", comments[0].Body, "hello world")
@@ -99,7 +99,7 @@ func TestComment(t *testing.T) {
 		// Pre-populate comments file with a synced comment
 		ts := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 		existing := []*issue.Comment{
-			{ID: "IC_abc", Author: "alice", CreatedAt: &ts, Body: "existing comment"},
+			{Metadata: &issue.CommentMeta{ID: "IC_abc", Author: "alice", CreatedAt: &ts}, Body: "existing comment"},
 		}
 		commentsFile := filepath.Join(parent, issuesDirName, "open", "1-my-issue.comments.json")
 		if err := issue.WriteComments(commentsFile, existing); err != nil {
@@ -126,8 +126,8 @@ func TestComment(t *testing.T) {
 		if len(comments) != 2 {
 			t.Fatalf("got %d comments, want 2", len(comments))
 		}
-		if comments[0].ID != "IC_abc" {
-			t.Errorf("existing comment should be first, got ID %q", comments[0].ID)
+		if comments[0].Metadata == nil || comments[0].Metadata.ID != "IC_abc" {
+			t.Errorf("existing comment should be first with ID %q, got Metadata %+v", "IC_abc", comments[0].Metadata)
 		}
 		if comments[1].Body != "new draft" {
 			t.Errorf("new draft should be last, got body %q", comments[1].Body)

@@ -119,7 +119,7 @@ func pushNewComments(iss *issue.Issue) error {
 
 	pushed := 0
 	for _, c := range local {
-		if c.ID == "" {
+		if c.Metadata == nil {
 			if err := gh.AddComment(iss.Number, c.Body); err != nil {
 				return err
 			}
