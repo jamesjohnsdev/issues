@@ -11,6 +11,7 @@ import (
 )
 
 const jsonFields = "number,title,state,stateReason,body,labels,assignees,milestone"
+const commentFields = "comments"
 
 type ghLabel struct {
 	Name string `json:"name"`
@@ -166,6 +167,48 @@ func Update(iss *issue.Issue) error {
 
 	if _, err := run("gh", args...); err != nil {
 		return fmt.Errorf("gh issue edit %d: %w", iss.Number, err)
+	}
+	return nil
+}
+
+type ghComment struct {
+	ID        string    `json:"id"`
+	Author    ghUser    `json:"author"`
+	Body      string    `json:"body"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
+// GetComments fetches all comments for a GitHub issue.
+func GetComments(number int) ([]*issue.Comment, error) {
+	out, err := run("gh", "issue", "view", fmt.Sprintf("%d", number),
+		"--json", commentFields,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("gh issue view %d: %w", number, err)
+	}
+	var raw struct {
+		Comments []ghComment `json:"comments"`
+	}
+	if err := json.Unmarshal(out, &raw); err != nil {
+		return nil, err
+	}
+	comments := make([]*issue.Comment, len(raw.Comments))
+	for i, c := range raw.Comments {
+		t := c.CreatedAt
+		comments[i] = &issue.Comment{
+			ID:        c.ID,
+			Author:    c.Author.Login,
+			CreatedAt: &t,
+			Body:      c.Body,
+		}
+	}
+	return comments, nil
+}
+
+// AddComment posts a new comment on a GitHub issue.
+func AddComment(number int, body string) error {
+	if _, err := run("gh", "issue", "comment", fmt.Sprintf("%d", number), "--body", body); err != nil {
+		return fmt.Errorf("gh issue comment %d: %w", number, err)
 	}
 	return nil
 }

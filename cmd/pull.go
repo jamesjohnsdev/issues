@@ -55,12 +55,19 @@ func pullOne(root string, iss *issue.Issue) error {
 
 	dir := stateDir(root, iss.State)
 	destPath := filepath.Join(dir, issue.Filename(iss))
+	commentsPath := filepath.Join(dir, issue.CommentsFilename(iss))
 
-	// If the issue exists locally in a different location (e.g. state changed), remove the old file
+	// If the issue exists locally in a different location (e.g. state changed), remove the old files
 	existing, _ := findLocalByNumber(root, iss.Number)
 	if existing != nil && existing.Path != destPath {
 		if err := os.Remove(existing.Path); err != nil {
 			return fmt.Errorf("removing old local issue: %w", err)
+		}
+		oldCommentsPath := filepath.Join(filepath.Dir(existing.Path), issue.CommentsFilename(existing))
+		if _, err := os.Stat(oldCommentsPath); err == nil {
+			if err := os.Rename(oldCommentsPath, commentsPath); err != nil {
+				return fmt.Errorf("moving comments file: %w", err)
+			}
 		}
 	}
 
@@ -69,7 +76,33 @@ func pullOne(root string, iss *issue.Issue) error {
 	}
 
 	origPath := filepath.Join(originalsDir(root), fmt.Sprintf("%d.md", iss.Number))
-	return saveOriginal(destPath, origPath)
+	if err := saveOriginal(destPath, origPath); err != nil {
+		return err
+	}
+
+	return pullComments(iss, commentsPath)
+}
+
+func pullComments(iss *issue.Issue, commentsPath string) error {
+	remote, err := gh.GetComments(iss.Number)
+	if err != nil {
+		return err
+	}
+
+	// Preserve any local-only comments (those without an id) by merging them in
+	local, _ := issue.ParseComments(commentsPath)
+	remoteIDs := make(map[string]bool, len(remote))
+	for _, c := range remote {
+		remoteIDs[c.ID] = true
+	}
+	for _, c := range local {
+		if c.ID == "" {
+			remote = append(remote, c)
+		}
+	}
+	_ = remoteIDs
+
+	return issue.WriteComments(commentsPath, remote)
 }
 
 func saveOriginal(src, dst string) error {
