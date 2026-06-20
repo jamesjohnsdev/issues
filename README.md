@@ -16,11 +16,13 @@ also for AI augmented workflows, where agents can have a source for development.
 - `issues create <title>` - creates a new issue in the current directory.
 - `issues create -e` - opens a blank issue in the editor without requiring a title upfront (discarded if saved with no title).
 - `issues view <number>` - opens an issue by number in the default editor.
+- `issues view <number> -c` - prints all comments on an issue to stdout.
+- `issues comment <number>` - opens the editor to draft a new comment (saved locally until pushed).
 - `issues close <number>` - marks an issue as closed.
 - `issues pull` - pulls all issues (and their comments) from GitHub.
 - `issues pull <number>` - pulls a single issue and its comments.
-- `issues push` - pushes all modified issues and any new local comments to GitHub.
-- `issues push <number>` - pushes a single issue and any new local comments.
+- `issues push` - pushes all modified issues and any new local comment drafts to GitHub.
+- `issues push <number>` - pushes a single issue and any new local comment drafts.
 - `issues sync` - syncs all issues in the current directory using the GitHub CLI.
 - `issues help` - shows help for the `issues` command.
 
@@ -28,23 +30,16 @@ also for AI augmented workflows, where agents can have a source for development.
 
 Each issue has a colocated `.comments.json` file (e.g. `19-add-comment-support.comments.json`) that is created automatically when pulling an issue. It contains all comments fetched from GitHub.
 
-To add a new comment locally, append an entry with only a `body` field:
+**Typical workflow:**
 
-```json
-[
-  {
-    "id": "IC_kwDO...",
-    "author": "jamesjohnsdev",
-    "created_at": "2026-06-20T10:00:00Z",
-    "body": "Existing comment from GitHub."
-  },
-  {
-    "body": "My new comment — will be posted on the next push."
-  }
-]
+```sh
+issues pull 19                # fetch issue and its comments
+issues view 19 -c             # read existing comments
+issues comment 19             # open editor to write a new comment
+issues push 19                # post the draft to GitHub
 ```
 
-Running `issues push <number>` will post any entries without an `id` to GitHub and update the file with their assigned IDs.
+Comments with no `id` in the JSON file are treated as local drafts and posted to GitHub on the next `push`. After pushing, the file is updated with the assigned IDs.
 
 ### Agentic
 
