@@ -240,6 +240,23 @@ func TestLoadAllLocal(t *testing.T) {
 		}
 	})
 
+	t.Run("skips colocated comments JSON files", func(t *testing.T) {
+		root := makeIssuesRoot(t, []issueFixture{
+			{"1-issue.md", issue.Issue{Number: 1, Title: "Issue", State: "open"}},
+		})
+		commentsJSON := filepath.Join(root, "open", "1-issue.comments.json")
+		if err := os.WriteFile(commentsJSON, []byte(`[{"body":"a comment"}]`), 0644); err != nil {
+			t.Fatal(err)
+		}
+		issues, err := loadAllLocal(root)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(issues) != 1 {
+			t.Errorf("got %d issues, want 1 (comments JSON should be ignored)", len(issues))
+		}
+	})
+
 	t.Run("skips directories inside open", func(t *testing.T) {
 		root := makeIssuesRoot(t, nil)
 		if err := os.MkdirAll(filepath.Join(root, "open", "subdir.md"), 0755); err != nil {
