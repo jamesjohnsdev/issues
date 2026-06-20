@@ -196,10 +196,12 @@ func GetComments(number int) ([]*issue.Comment, error) {
 	for i, c := range raw.Comments {
 		t := c.CreatedAt
 		comments[i] = &issue.Comment{
-			ID:        c.ID,
-			Author:    c.Author.Login,
-			CreatedAt: &t,
-			Body:      c.Body,
+			Metadata: &issue.CommentMeta{
+				ID:        c.ID,
+				Author:    c.Author.Login,
+				CreatedAt: &t,
+			},
+			Body: c.Body,
 		}
 	}
 	return comments, nil

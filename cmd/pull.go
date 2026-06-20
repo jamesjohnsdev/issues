@@ -93,10 +93,12 @@ func pullComments(iss *issue.Issue, commentsPath string) error {
 	local, _ := issue.ParseComments(commentsPath)
 	remoteIDs := make(map[string]bool, len(remote))
 	for _, c := range remote {
-		remoteIDs[c.ID] = true
+		if c.Metadata != nil {
+			remoteIDs[c.Metadata.ID] = true
+		}
 	}
 	for _, c := range local {
-		if c.ID == "" {
+		if c.Metadata == nil {
 			remote = append(remote, c)
 		}
 	}

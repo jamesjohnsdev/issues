@@ -67,7 +67,7 @@ func TestParseComments(t *testing.T) {
 
 	t.Run("synced comment with all fields", func(t *testing.T) {
 		path := filepath.Join(t.TempDir(), "test.comments.json")
-		raw := `[{"id":"IC_abc123","author":"alice","created_at":"2026-01-01T00:00:00Z","body":"hello"}]`
+		raw := `[{"metadata":{"id":"IC_abc123","author":"alice","created_at":"2026-01-01T00:00:00Z"},"body":"hello"}]`
 		if err := os.WriteFile(path, []byte(raw), 0644); err != nil {
 			t.Fatal(err)
 		}
@@ -79,11 +79,14 @@ func TestParseComments(t *testing.T) {
 			t.Fatalf("got %d comments, want 1", len(comments))
 		}
 		c := comments[0]
-		if c.ID != "IC_abc123" {
-			t.Errorf("ID = %q, want %q", c.ID, "IC_abc123")
+		if c.Metadata == nil {
+			t.Fatal("Metadata is nil, want non-nil")
 		}
-		if c.Author != "alice" {
-			t.Errorf("Author = %q, want %q", c.Author, "alice")
+		if c.Metadata.ID != "IC_abc123" {
+			t.Errorf("ID = %q, want %q", c.Metadata.ID, "IC_abc123")
+		}
+		if c.Metadata.Author != "alice" {
+			t.Errorf("Author = %q, want %q", c.Metadata.Author, "alice")
 		}
 		if c.Body != "hello" {
 			t.Errorf("Body = %q, want %q", c.Body, "hello")
@@ -103,8 +106,8 @@ func TestParseComments(t *testing.T) {
 		if len(comments) != 1 {
 			t.Fatalf("got %d comments, want 1", len(comments))
 		}
-		if comments[0].ID != "" {
-			t.Errorf("expected empty ID for local comment, got %q", comments[0].ID)
+		if comments[0].Metadata != nil {
+			t.Errorf("expected nil Metadata for local comment, got %+v", comments[0].Metadata)
 		}
 		if comments[0].Body != "draft comment" {
 			t.Errorf("Body = %q, want %q", comments[0].Body, "draft comment")
@@ -141,7 +144,7 @@ func TestWriteParseComments(t *testing.T) {
 	t.Run("synced comment round-trips", func(t *testing.T) {
 		ts := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 		in := []*Comment{
-			{ID: "IC_abc", Author: "alice", CreatedAt: &ts, Body: "hello"},
+			{Metadata: &CommentMeta{ID: "IC_abc", Author: "alice", CreatedAt: &ts}, Body: "hello"},
 		}
 		path := filepath.Join(t.TempDir(), "test.comments.json")
 		if err := WriteComments(path, in); err != nil {
@@ -155,21 +158,24 @@ func TestWriteParseComments(t *testing.T) {
 			t.Fatalf("got %d comments, want 1", len(got))
 		}
 		c := got[0]
-		if c.ID != "IC_abc" {
-			t.Errorf("ID = %q, want %q", c.ID, "IC_abc")
+		if c.Metadata == nil {
+			t.Fatal("Metadata is nil, want non-nil")
 		}
-		if c.Author != "alice" {
-			t.Errorf("Author = %q, want %q", c.Author, "alice")
+		if c.Metadata.ID != "IC_abc" {
+			t.Errorf("ID = %q, want %q", c.Metadata.ID, "IC_abc")
+		}
+		if c.Metadata.Author != "alice" {
+			t.Errorf("Author = %q, want %q", c.Metadata.Author, "alice")
 		}
 		if c.Body != "hello" {
 			t.Errorf("Body = %q, want %q", c.Body, "hello")
 		}
-		if !c.CreatedAt.Equal(ts) {
-			t.Errorf("CreatedAt = %v, want %v", c.CreatedAt, ts)
+		if !c.Metadata.CreatedAt.Equal(ts) {
+			t.Errorf("CreatedAt = %v, want %v", c.Metadata.CreatedAt, ts)
 		}
 	})
 
-	t.Run("local-only comment round-trips with empty id", func(t *testing.T) {
+	t.Run("local-only comment round-trips with nil metadata", func(t *testing.T) {
 		in := []*Comment{{Body: "new comment"}}
 		path := filepath.Join(t.TempDir(), "test.comments.json")
 		if err := WriteComments(path, in); err != nil {
@@ -182,8 +188,8 @@ func TestWriteParseComments(t *testing.T) {
 		if len(got) != 1 {
 			t.Fatalf("got %d comments, want 1", len(got))
 		}
-		if got[0].ID != "" {
-			t.Errorf("expected empty ID, got %q", got[0].ID)
+		if got[0].Metadata != nil {
+			t.Errorf("expected nil Metadata, got %+v", got[0].Metadata)
 		}
 		if got[0].Body != "new comment" {
 			t.Errorf("Body = %q, want %q", got[0].Body, "new comment")
@@ -193,7 +199,7 @@ func TestWriteParseComments(t *testing.T) {
 	t.Run("mixed synced and local comments round-trip", func(t *testing.T) {
 		ts := time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC)
 		in := []*Comment{
-			{ID: "IC_xyz", Author: "bob", CreatedAt: &ts, Body: "existing"},
+			{Metadata: &CommentMeta{ID: "IC_xyz", Author: "bob", CreatedAt: &ts}, Body: "existing"},
 			{Body: "my draft"},
 		}
 		path := filepath.Join(t.TempDir(), "test.comments.json")
@@ -207,11 +213,11 @@ func TestWriteParseComments(t *testing.T) {
 		if len(got) != 2 {
 			t.Fatalf("got %d comments, want 2", len(got))
 		}
-		if got[0].ID != "IC_xyz" {
-			t.Errorf("got[0].ID = %q, want %q", got[0].ID, "IC_xyz")
+		if got[0].Metadata == nil || got[0].Metadata.ID != "IC_xyz" {
+			t.Errorf("got[0].Metadata.ID = %v, want %q", got[0].Metadata, "IC_xyz")
 		}
-		if got[1].ID != "" {
-			t.Errorf("got[1].ID = %q, want empty", got[1].ID)
+		if got[1].Metadata != nil {
+			t.Errorf("got[1].Metadata = %+v, want nil", got[1].Metadata)
 		}
 		if got[1].Body != "my draft" {
 			t.Errorf("got[1].Body = %q, want %q", got[1].Body, "my draft")
