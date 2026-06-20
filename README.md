@@ -17,8 +17,34 @@ also for AI augmented workflows, where agents can have a source for development.
 - `issues create -e` - opens a blank issue in the editor without requiring a title upfront (discarded if saved with no title).
 - `issues view <number>` - opens an issue by number in the default editor.
 - `issues close <number>` - marks an issue as closed.
+- `issues pull` - pulls all issues (and their comments) from GitHub.
+- `issues pull <number>` - pulls a single issue and its comments.
+- `issues push` - pushes all modified issues and any new local comments to GitHub.
+- `issues push <number>` - pushes a single issue and any new local comments.
 - `issues sync` - syncs all issues in the current directory using the GitHub CLI.
 - `issues help` - shows help for the `issues` command.
+
+### Comments
+
+Each issue has a colocated `.comments.json` file (e.g. `19-add-comment-support.comments.json`) that is created automatically when pulling an issue. It contains all comments fetched from GitHub.
+
+To add a new comment locally, append an entry with only a `body` field:
+
+```json
+[
+  {
+    "id": "IC_kwDO...",
+    "author": "jamesjohnsdev",
+    "created_at": "2026-06-20T10:00:00Z",
+    "body": "Existing comment from GitHub."
+  },
+  {
+    "body": "My new comment — will be posted on the next push."
+  }
+]
+```
+
+Running `issues push <number>` will post any entries without an `id` to GitHub and update the file with their assigned IDs.
 
 ### Agentic
 
