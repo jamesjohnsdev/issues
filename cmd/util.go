@@ -18,11 +18,19 @@ func issuesRoot() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	path := filepath.Join(cwd, issuesDirName)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return "", errors.New("no .issues directory — run `issues init` first")
+
+	for {
+		path := filepath.Join(cwd, issuesDirName)
+		if _, err := os.Stat(path); err == nil {
+			return path, nil
+		}
+		parentDir := filepath.Dir(cwd)
+		if parentDir == cwd {
+			break
+		}
+		cwd = parentDir
 	}
-	return path, nil
+	return "", errors.New("no .issues directory — run `issues init` first")
 }
 
 func openDir(root string) string      { return filepath.Join(root, "open") }
