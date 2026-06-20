@@ -104,5 +104,38 @@ func pushOne(root string, iss *issue.Issue) error {
 	}
 
 	fmt.Printf("%s #%d: %s\n", color.GreenString("Pushed"), iss.Number, iss.Title)
-	return nil
+
+	return pushNewComments(iss)
+}
+
+// pushNewComments posts any local-only comments (those with no id) to GitHub,
+// then re-fetches comments to update the local file with their assigned IDs.
+func pushNewComments(iss *issue.Issue) error {
+	commentsPath := filepath.Join(filepath.Dir(iss.Path), issue.CommentsFilename(iss))
+	local, err := issue.ParseComments(commentsPath)
+	if err != nil || local == nil {
+		return err
+	}
+
+	pushed := 0
+	for _, c := range local {
+		if c.ID == "" {
+			if err := gh.AddComment(iss.Number, c.Body); err != nil {
+				return err
+			}
+			pushed++
+		}
+	}
+
+	if pushed == 0 {
+		return nil
+	}
+
+	// Re-fetch so the file reflects the newly assigned IDs
+	fmt.Printf("%s %d comment(s) on #%d\n", color.GreenString("Pushed"), pushed, iss.Number)
+	remote, err := gh.GetComments(iss.Number)
+	if err != nil {
+		return err
+	}
+	return issue.WriteComments(commentsPath, remote)
 }
