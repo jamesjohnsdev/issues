@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0](https://github.com/jamesjohnsdev/issues/compare/v0.1.0...v0.2.0) (2026-06-21)
+
+
+### Features
+
+* **push:** parallelize push operations with goroutines ([311e4f6](https://github.com/jamesjohnsdev/issues/commit/311e4f605f11dea84a43788be43ee9067b6a36f6))
+
+
+### Bug Fixes
+
+* **delete:** remove snapshot only after local file deletion succeeds ([3e35045](https://github.com/jamesjohnsdev/issues/commit/3e350458d66b0f31d3cbd11cb061061db5117755)), closes [#17](https://github.com/jamesjohnsdev/issues/issues/17)
+
 ## [0.1.0](https://github.com/jamesjohnsdev/issues/compare/v0.0.4...v0.1.0) (2026-06-21)
 
 
