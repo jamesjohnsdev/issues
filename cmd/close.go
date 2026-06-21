@@ -30,6 +30,27 @@ var closeCmd = &cobra.Command{
 			return nil
 		}
 
+		addComment, _ := cmd.Flags().GetBool("comment")
+		if addComment {
+			body, err := draftCommentBody()
+			if err != nil {
+				return err
+			}
+			if body == "" {
+				fmt.Println(color.YellowString("Aborted.") + " Empty body, comment discarded.")
+				return nil
+			}
+			commentsPath := filepath.Join(filepath.Dir(iss.Path), issue.CommentsFilename(iss))
+			comments, err := issue.ParseComments(commentsPath)
+			if err != nil {
+				return fmt.Errorf("reading comments: %w", err)
+			}
+			comments = append(comments, &issue.Comment{Body: body})
+			if err := issue.WriteComments(commentsPath, comments); err != nil {
+				return fmt.Errorf("saving comment: %w", err)
+			}
+		}
+
 		iss.State = "closed"
 
 		newPath := filepath.Join(closedDir(root), filepath.Base(iss.Path))
@@ -43,7 +64,19 @@ var closeCmd = &cobra.Command{
 			return err
 		}
 
+		oldComments := filepath.Join(filepath.Dir(iss.Path), issue.CommentsFilename(iss))
+		if _, statErr := os.Stat(oldComments); statErr == nil {
+			newComments := filepath.Join(closedDir(root), issue.CommentsFilename(iss))
+			if err := os.Rename(oldComments, newComments); err != nil {
+				return err
+			}
+		}
+
 		fmt.Printf("%s %s: %s\n", color.GreenString("Closed"), args[0], iss.Title)
 		return nil
 	},
+}
+
+func init() {
+	closeCmd.Flags().BoolP("comment", "c", false, "open editor to draft a closing comment")
 }
