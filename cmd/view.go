@@ -14,6 +14,7 @@ import (
 )
 
 var viewCommentsFlag bool
+var viewWebFlag bool
 
 var viewCmd = &cobra.Command{
 	Use:   "view <number>",
@@ -28,6 +29,17 @@ var viewCmd = &cobra.Command{
 		iss, err := findLocalByID(root, args[0])
 		if err != nil {
 			return err
+		}
+
+		if viewWebFlag {
+			if iss.Number == 0 {
+				return fmt.Errorf("issue %s is local-only and has no GitHub URL", idFromPath(iss.Path))
+			}
+			c := exec.Command("gh", "issue", "view", fmt.Sprintf("%d", iss.Number), "--web")
+			c.Stdin = os.Stdin
+			c.Stdout = os.Stdout
+			c.Stderr = os.Stderr
+			return c.Run()
 		}
 
 		if viewCommentsFlag {
@@ -87,4 +99,5 @@ func printComments(iss *issue.Issue) error {
 
 func init() {
 	viewCmd.Flags().BoolVarP(&viewCommentsFlag, "comments", "c", false, "show comments instead of opening the editor")
+	viewCmd.Flags().BoolVarP(&viewWebFlag, "web", "w", false, "open the issue in the browser")
 }
