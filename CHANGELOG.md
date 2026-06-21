@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.1.0](https://github.com/jamesjohnsdev/issues/compare/v0.0.4...v0.1.0) (2026-06-21)
+
+
+### Features
+
+* able to close with comment ([bf7562c](https://github.com/jamesjohnsdev/issues/commit/bf7562c7554111df20e5de2bec054cf5f368a3ab))
+* added `--web` flag to open browser view ([e075e9f](https://github.com/jamesjohnsdev/issues/commit/e075e9fba138355af18ce1a0f3e75a315e599e69))
+* cli commands for issue comments ([df364b2](https://github.com/jamesjohnsdev/issues/commit/df364b2f2497d3c0008feafe9abbd97cc47b195a))
+* comment compatability ([14c5d6f](https://github.com/jamesjohnsdev/issues/commit/14c5d6f8bcc60704115fcd5979ddd6aae5b92384))
+* enable metadata support for comments ([a8f1fde](https://github.com/jamesjohnsdev/issues/commit/a8f1fde6eb1f46686859309d0ad25811ed2e2bc1))
+* merge issues together and mark duplicates ([40f2ca8](https://github.com/jamesjohnsdev/issues/commit/40f2ca8248b9893ef1b4f438e743fd67e61842b5))
+* run issues commands from subdirectories ([5c74a47](https://github.com/jamesjohnsdev/issues/commit/5c74a4714b96268b31b435a8f5810125dddbd3f4))
+
+
+### Bug Fixes
+
+* guard against empty/whitespace editor env and exclusive flags ([439acf1](https://github.com/jamesjohnsdev/issues/commit/439acf1fcf97d63ec0d8fe1d611401128bbd57ee))
+
+
+### Performance Improvements
+
+* **sync:** skip unchanged issues and parallelize comment fetches ([b8076c7](https://github.com/jamesjohnsdev/issues/commit/b8076c7b2c4ce66dda064fddc81c1b2ad7dc93b6))
+
 ## [0.0.4](https://github.com/jamesjohnsdev/issues/compare/v0.0.3...v0.0.4) (2026-06-18)
 
 
