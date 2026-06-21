@@ -218,6 +218,18 @@ func AddComment(number int, body string) error {
 	return nil
 }
 
+// Close closes a GitHub issue as "not planned", optionally with a comment.
+func Close(number int, comment string) error {
+	args := []string{"issue", "close", fmt.Sprintf("%d", number), "--reason", "not planned"}
+	if comment != "" {
+		args = append(args, "--comment", comment)
+	}
+	if _, err := run("gh", args...); err != nil {
+		return fmt.Errorf("gh issue close %d: %w", number, err)
+	}
+	return nil
+}
+
 // Delete permanently deletes a GitHub issue.
 func Delete(number int) error {
 	if _, err := run("gh", "issue", "delete", fmt.Sprintf("%d", number), "--yes"); err != nil {

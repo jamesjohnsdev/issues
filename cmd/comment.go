@@ -40,8 +40,18 @@ var commentCmd = &cobra.Command{
 			return fmt.Errorf("creating temp file: %w", err)
 		}
 		tmpPath := tmp.Name()
-		defer os.Remove(tmpPath)
-		tmp.Close()
+		var funcErr error = nil
+		defer func() {
+			if err := os.Remove(tmpPath); err != nil {
+				funcErr = err
+			}
+		}()
+		if funcErr != nil {
+			return fmt.Errorf("removing temp file: %w", funcErr)
+		}
+		if err := tmp.Close(); err != nil {
+			return fmt.Errorf("closing temp file: %w", err)
+		}
 
 		parts := strings.Fields(editor)
 		c := exec.Command(parts[0], append(parts[1:], tmpPath)...)

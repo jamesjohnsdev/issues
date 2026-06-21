@@ -120,7 +120,10 @@ func pullComments(iss *issue.Issue, commentsPath string) error {
 	}
 
 	// Preserve any local-only comments (those without an id) by merging them in
-	local, _ := issue.ParseComments(commentsPath)
+	local, err := issue.ParseComments(commentsPath)
+	if err != nil {
+		return fmt.Errorf("parsing local comments: %w", err)
+	}
 	remoteIDs := make(map[string]bool, len(remote))
 	for _, c := range remote {
 		if c.Metadata != nil {
