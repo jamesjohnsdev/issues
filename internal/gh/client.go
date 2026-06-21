@@ -10,7 +10,7 @@ import (
 	"github.com/jamesjohnsdev/issues/internal/issue"
 )
 
-const jsonFields = "number,title,state,stateReason,body,labels,assignees,milestone"
+const jsonFields = "number,title,state,stateReason,body,labels,assignees,milestone,updatedAt"
 const commentFields = "comments"
 
 type ghLabel struct {
@@ -34,6 +34,7 @@ type ghIssue struct {
 	Labels      []ghLabel    `json:"labels"`
 	Assignees   []ghUser     `json:"assignees"`
 	Milestone   *ghMilestone `json:"milestone"`
+	UpdatedAt   time.Time    `json:"updatedAt"`
 }
 
 func (g ghIssue) toIssue() *issue.Issue {
@@ -49,6 +50,7 @@ func (g ghIssue) toIssue() *issue.Issue {
 	if g.Milestone != nil {
 		milestone = g.Milestone.Title
 	}
+	updatedAt := g.UpdatedAt
 	return &issue.Issue{
 		Number:      g.Number,
 		Title:       g.Title,
@@ -58,6 +60,7 @@ func (g ghIssue) toIssue() *issue.Issue {
 		State:       strings.ToLower(g.State),
 		StateReason: strings.ToLower(g.StateReason),
 		Body:        g.Body,
+		UpdatedAt:   &updatedAt,
 	}
 }
 

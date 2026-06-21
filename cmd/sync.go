@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/fatih/color"
 	"github.com/jamesjohnsdev/issues/internal/gh"
+	"github.com/jamesjohnsdev/issues/internal/issue"
 	"github.com/spf13/cobra"
 )
 
@@ -79,12 +81,57 @@ var syncCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+
+		// Reload local index after any pushes above.
+		localIndex, err := buildLocalIndex(root)
+		if err != nil {
+			return err
+		}
+
+		// Write issue files serially, collect which ones need comment fetches.
+		type commentJob struct {
+			iss          *issue.Issue
+			commentsPath string
+		}
+		var jobs []commentJob
 		for _, remote := range remotes {
-			if err := pullOne(root, remote); err != nil {
+			cp, err := pullOne(root, remote, localIndex)
+			if err != nil {
 				return err
 			}
+			if cp != "" {
+				jobs = append(jobs, commentJob{remote, cp})
+			}
 		}
-		fmt.Printf("%s %d issue(s) from GitHub\n", color.GreenString("Synced"), len(remotes))
+
+		// Fan out comment fetches — one gh subprocess per issue but now concurrent.
+		const concurrency = 20
+		sem := make(chan struct{}, concurrency)
+		var wg sync.WaitGroup
+		errCh := make(chan error, len(jobs))
+		for _, j := range jobs {
+			wg.Add(1)
+			sem <- struct{}{}
+			go func(j commentJob) {
+				defer wg.Done()
+				defer func() { <-sem }()
+				if err := pullComments(j.iss, j.commentsPath); err != nil {
+					errCh <- err
+				}
+			}(j)
+		}
+		wg.Wait()
+		close(errCh)
+		if err := <-errCh; err != nil {
+			return err
+		}
+
+		skipped := len(remotes) - len(jobs)
+		if skipped > 0 {
+			fmt.Printf("%s %d issue(s) from GitHub (%d unchanged)\n", color.GreenString("Synced"), len(remotes), skipped)
+		} else {
+			fmt.Printf("%s %d issue(s) from GitHub\n", color.GreenString("Synced"), len(remotes))
+		}
 		return nil
 	},
 }

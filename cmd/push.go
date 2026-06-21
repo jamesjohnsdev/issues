@@ -85,7 +85,15 @@ func pushOne(root string, iss *issue.Issue) error {
 			return err
 		}
 		fmt.Printf("%s #%d: %s\n", color.GreenString("Created"), number, iss.Title)
-		return pullOne(root, remote)
+		localIndex := map[int]*issue.Issue{iss.Number: iss}
+		commentsPath, err := pullOne(root, remote, localIndex)
+		if err != nil {
+			return err
+		}
+		if commentsPath != "" {
+			return pullComments(remote, commentsPath)
+		}
+		return nil
 	}
 
 	if err := gh.Update(iss); err != nil {

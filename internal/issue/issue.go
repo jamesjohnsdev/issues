@@ -20,6 +20,10 @@ type Issue struct {
 	StateReason string     `yaml:"state_reason,omitempty"`
 	SyncedAt    *time.Time `yaml:"synced_at,omitempty"`
 
+	// UpdatedAt is populated from GitHub during sync; not persisted locally.
+	// Used to skip unchanged issues: if UpdatedAt <= SyncedAt nothing has changed.
+	UpdatedAt *time.Time `yaml:"-"`
+
 	Body string `yaml:"-"`
 	Path string `yaml:"-"`
 }
