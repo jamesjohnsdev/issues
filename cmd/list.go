@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 	"sort"
 	"strings"
 
@@ -10,12 +12,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var listAll, listClosed bool
+var listAll, listClosed, listWeb bool
 
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List local issues",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if listWeb {
+			c := exec.Command("gh", "issue", "list", "--web")
+			c.Stdin = os.Stdin
+			c.Stdout = os.Stdout
+			c.Stderr = os.Stderr
+			return c.Run()
+		}
+
 		root, err := issuesRoot()
 		if err != nil {
 			return err
@@ -107,4 +117,5 @@ var listCmd = &cobra.Command{
 func init() {
 	listCmd.Flags().BoolVar(&listAll, "all", false, "show open and closed issues")
 	listCmd.Flags().BoolVar(&listClosed, "closed", false, "show only closed issues")
+	listCmd.Flags().BoolVarP(&listWeb, "web", "w", false, "open issues list in the browser")
 }

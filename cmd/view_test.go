@@ -11,9 +11,14 @@ import (
 
 func resetViewFlags(t *testing.T) {
 	t.Helper()
-	orig := viewCommentsFlag
-	t.Cleanup(func() { viewCommentsFlag = orig })
+	origComments := viewCommentsFlag
+	origWeb := viewWebFlag
+	t.Cleanup(func() {
+		viewCommentsFlag = origComments
+		viewWebFlag = origWeb
+	})
 	viewCommentsFlag = false
+	viewWebFlag = false
 }
 
 func TestViewComments(t *testing.T) {
@@ -159,6 +164,25 @@ func TestViewComments(t *testing.T) {
 
 		if err := viewCmd.RunE(viewCmd, []string{"1"}); err != nil {
 			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+}
+
+func TestViewWeb(t *testing.T) {
+	t.Run("web flag on local T-issue returns error", func(t *testing.T) {
+		parent := makeProjectDir(t, []issueFixture{
+			{"T1-local-only.md", issue.Issue{Number: 0, Title: "Local only", State: "open"}},
+		})
+		chdirTo(t, parent)
+		resetViewFlags(t)
+		viewWebFlag = true
+
+		err := viewCmd.RunE(viewCmd, []string{"T1"})
+		if err == nil {
+			t.Error("expected error for local-only issue with --web, got nil")
+		}
+		if !strings.Contains(err.Error(), "local-only") {
+			t.Errorf("expected 'local-only' in error, got: %v", err)
 		}
 	})
 }
