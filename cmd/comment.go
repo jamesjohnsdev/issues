@@ -2,10 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/fatih/color"
 	"github.com/jamesjohnsdev/issues/internal/issue"
@@ -27,46 +24,10 @@ var commentCmd = &cobra.Command{
 			return err
 		}
 
-		editor := os.Getenv("VISUAL")
-		if editor == "" {
-			editor = os.Getenv("EDITOR")
-		}
-		if editor == "" {
-			return fmt.Errorf("no editor set: define $VISUAL or $EDITOR")
-		}
-
-		tmp, err := os.CreateTemp("", "issues-comment-*.md")
+		body, err := draftCommentBody()
 		if err != nil {
-			return fmt.Errorf("creating temp file: %w", err)
+			return err
 		}
-		tmpPath := tmp.Name()
-		var funcErr error = nil
-		defer func() {
-			if err := os.Remove(tmpPath); err != nil {
-				funcErr = err
-			}
-		}()
-		if funcErr != nil {
-			return fmt.Errorf("removing temp file: %w", funcErr)
-		}
-		if err := tmp.Close(); err != nil {
-			return fmt.Errorf("closing temp file: %w", err)
-		}
-
-		parts := strings.Fields(editor)
-		c := exec.Command(parts[0], append(parts[1:], tmpPath)...)
-		c.Stdin = os.Stdin
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
-		if err := c.Run(); err != nil {
-			return fmt.Errorf("editor exited with error: %w", err)
-		}
-
-		data, err := os.ReadFile(tmpPath)
-		if err != nil {
-			return fmt.Errorf("reading temp file: %w", err)
-		}
-		body := strings.TrimSpace(string(data))
 		if body == "" {
 			fmt.Println(color.YellowString("Aborted.") + " Empty body, comment discarded.")
 			return nil

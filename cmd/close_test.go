@@ -8,6 +8,18 @@ import (
 	"github.com/jamesjohnsdev/issues/internal/issue"
 )
 
+func setCloseComment(t *testing.T, val bool) {
+	t.Helper()
+	v := "false"
+	if val {
+		v = "true"
+	}
+	if err := closeCmd.Flags().Set("comment", v); err != nil {
+		t.Fatalf("setting --comment flag: %v", err)
+	}
+	t.Cleanup(func() { _ = closeCmd.Flags().Set("comment", "false") })
+}
+
 func TestClose(t *testing.T) {
 	tests := []struct {
 		name             string
@@ -111,4 +123,106 @@ func TestClose(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCloseMovesCommentsFile(t *testing.T) {
+	parent := makeProjectDir(t, []issueFixture{
+		{"1-my-issue.md", issue.Issue{Number: 1, Title: "My issue", State: "open"}},
+	})
+	chdirTo(t, parent)
+
+	commentsFile := filepath.Join(parent, issuesDirName, "open", "1-my-issue.comments.json")
+	if err := issue.WriteComments(commentsFile, []*issue.Comment{{Body: "existing"}}); err != nil {
+		t.Fatal(err)
+	}
+
+	_ = captureStdout(t, func() {
+		if err := closeCmd.RunE(closeCmd, []string{"1"}); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	closedComments := filepath.Join(parent, issuesDirName, "closed", "1-my-issue.comments.json")
+	if _, err := os.Stat(closedComments); os.IsNotExist(err) {
+		t.Error("expected comments file to be moved to closed/, but it was not found there")
+	}
+	if _, err := os.Stat(commentsFile); !os.IsNotExist(err) {
+		t.Error("expected comments file to be gone from open/, but it still exists")
+	}
+}
+
+func TestCloseWithComment(t *testing.T) {
+	t.Run("no editor returns error", func(t *testing.T) {
+		parent := makeProjectDir(t, []issueFixture{
+			{"1-my-issue.md", issue.Issue{Number: 1, Title: "My issue", State: "open"}},
+		})
+		chdirTo(t, parent)
+		t.Setenv("VISUAL", "")
+		t.Setenv("EDITOR", "")
+		setCloseComment(t, true)
+
+		err := closeCmd.RunE(closeCmd, []string{"1"})
+		if err == nil {
+			t.Error("expected error when no editor set, got nil")
+		}
+	})
+
+	t.Run("empty body aborts without closing", func(t *testing.T) {
+		parent := makeProjectDir(t, []issueFixture{
+			{"1-my-issue.md", issue.Issue{Number: 1, Title: "My issue", State: "open"}},
+		})
+		chdirTo(t, parent)
+		t.Setenv("VISUAL", "")
+		t.Setenv("EDITOR", "true")
+		setCloseComment(t, true)
+
+		_ = captureStdout(t, func() {
+			if err := closeCmd.RunE(closeCmd, []string{"1"}); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+
+		openPath := filepath.Join(parent, issuesDirName, "open", "1-my-issue.md")
+		if _, err := os.Stat(openPath); os.IsNotExist(err) {
+			t.Error("issue should not have been closed when comment body was empty")
+		}
+	})
+
+	t.Run("comment saved and issue closed", func(t *testing.T) {
+		parent := makeProjectDir(t, []issueFixture{
+			{"1-my-issue.md", issue.Issue{Number: 1, Title: "My issue", State: "open"}},
+		})
+		chdirTo(t, parent)
+
+		script := filepath.Join(t.TempDir(), "editor.sh")
+		if err := os.WriteFile(script, []byte("#!/bin/sh\necho 'closing note' > \"$1\"\n"), 0755); err != nil {
+			t.Fatal(err)
+		}
+		t.Setenv("VISUAL", "")
+		t.Setenv("EDITOR", script)
+		setCloseComment(t, true)
+
+		_ = captureStdout(t, func() {
+			if err := closeCmd.RunE(closeCmd, []string{"1"}); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+
+		closedPath := filepath.Join(parent, issuesDirName, "closed", "1-my-issue.md")
+		if _, err := os.Stat(closedPath); os.IsNotExist(err) {
+			t.Error("expected issue in closed/ but it was not found")
+		}
+
+		commentsPath := filepath.Join(parent, issuesDirName, "closed", "1-my-issue.comments.json")
+		comments, err := issue.ParseComments(commentsPath)
+		if err != nil {
+			t.Fatalf("ParseComments: %v", err)
+		}
+		if len(comments) != 1 {
+			t.Fatalf("got %d comments, want 1", len(comments))
+		}
+		if comments[0].Body != "closing note" {
+			t.Errorf("Body = %q, want %q", comments[0].Body, "closing note")
+		}
+	})
 }
