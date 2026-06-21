@@ -19,6 +19,7 @@ also for AI augmented workflows, where agents can have a source for development.
 - `issues view <number> -c` - prints all comments on an issue to stdout.
 - `issues comment <number>` - opens the editor to draft a new comment (saved locally until pushed).
 - `issues close <number>` - marks an issue as closed.
+- `issues merge <a> <b>` - closes issue `a` as a duplicate of issue `b`, adding cross-reference comments.
 - `issues pull` - pulls all issues (and their comments) from GitHub.
 - `issues pull <number>` - pulls a single issue and its comments.
 - `issues push` - pushes all modified issues and any new local comment drafts to GitHub.

@@ -70,4 +70,5 @@ Use "{{.CommandPath}} [command] --help" for more information about a command.{{e
 	rootCmd.AddCommand(commentCmd)
 	rootCmd.AddCommand(closeCmd)
 	rootCmd.AddCommand(deleteCmd)
+	rootCmd.AddCommand(mergeCmd)
 }
