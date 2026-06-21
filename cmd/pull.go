@@ -32,16 +32,38 @@ var pullCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
-			return pullOne(root, remote)
+			local, _ := findLocalByNumber(root, number)
+			localIndex := map[int]*issue.Issue{}
+			if local != nil {
+				localIndex[local.Number] = local
+			}
+			commentsPath, err := pullOne(root, remote, localIndex)
+			if err != nil {
+				return err
+			}
+			if commentsPath != "" {
+				return pullComments(remote, commentsPath)
+			}
+			return nil
 		}
 
+		localIndex, err := buildLocalIndex(root)
+		if err != nil {
+			return err
+		}
 		remotes, err := gh.ListAll()
 		if err != nil {
 			return err
 		}
 		for _, remote := range remotes {
-			if err := pullOne(root, remote); err != nil {
+			commentsPath, err := pullOne(root, remote, localIndex)
+			if err != nil {
 				return err
+			}
+			if commentsPath != "" {
+				if err := pullComments(remote, commentsPath); err != nil {
+					return err
+				}
 			}
 		}
 		fmt.Printf("%s %d issue(s)\n", color.GreenString("Pulled"), len(remotes))
@@ -49,7 +71,16 @@ var pullCmd = &cobra.Command{
 	},
 }
 
-func pullOne(root string, iss *issue.Issue) error {
+// pullOne writes the issue file and original snapshot. Returns commentsPath to
+// be fetched, or empty string if the issue is unchanged since last sync.
+func pullOne(root string, iss *issue.Issue, localIndex map[int]*issue.Issue) (string, error) {
+	existing := localIndex[iss.Number]
+
+	// Skip if nothing has changed since we last synced.
+	if existing != nil && existing.SyncedAt != nil && iss.UpdatedAt != nil && !iss.UpdatedAt.After(*existing.SyncedAt) {
+		return "", nil
+	}
+
 	now := time.Now().UTC().Truncate(time.Second)
 	iss.SyncedAt = &now
 
@@ -57,30 +88,29 @@ func pullOne(root string, iss *issue.Issue) error {
 	destPath := filepath.Join(dir, issue.Filename(iss))
 	commentsPath := filepath.Join(dir, issue.CommentsFilename(iss))
 
-	// If the issue exists locally in a different location (e.g. state changed), remove the old files
-	existing, _ := findLocalByNumber(root, iss.Number)
+	// If state changed the file lives in a different directory; move old files.
 	if existing != nil && existing.Path != destPath {
 		if err := os.Remove(existing.Path); err != nil {
-			return fmt.Errorf("removing old local issue: %w", err)
+			return "", fmt.Errorf("removing old local issue: %w", err)
 		}
 		oldCommentsPath := filepath.Join(filepath.Dir(existing.Path), issue.CommentsFilename(existing))
 		if _, err := os.Stat(oldCommentsPath); err == nil {
 			if err := os.Rename(oldCommentsPath, commentsPath); err != nil {
-				return fmt.Errorf("moving comments file: %w", err)
+				return "", fmt.Errorf("moving comments file: %w", err)
 			}
 		}
 	}
 
 	if err := issue.Write(destPath, iss); err != nil {
-		return fmt.Errorf("writing #%d: %w", iss.Number, err)
+		return "", fmt.Errorf("writing #%d: %w", iss.Number, err)
 	}
 
 	origPath := filepath.Join(originalsDir(root), fmt.Sprintf("%d.md", iss.Number))
 	if err := saveOriginal(destPath, origPath); err != nil {
-		return err
+		return "", err
 	}
 
-	return pullComments(iss, commentsPath)
+	return commentsPath, nil
 }
 
 func pullComments(iss *issue.Issue, commentsPath string) error {

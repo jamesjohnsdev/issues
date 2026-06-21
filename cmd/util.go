@@ -81,6 +81,18 @@ func findLocalByNumber(root string, number int) (*issue.Issue, error) {
 	return nil, fmt.Errorf("issue #%d not found locally", number)
 }
 
+func buildLocalIndex(root string) (map[int]*issue.Issue, error) {
+	issues, err := loadAllLocal(root)
+	if err != nil {
+		return nil, err
+	}
+	m := make(map[int]*issue.Issue, len(issues))
+	for _, iss := range issues {
+		m[iss.Number] = iss
+	}
+	return m, nil
+}
+
 // findLocalByID accepts either a plain integer ("42") or a T-prefixed local ID ("T1").
 func findLocalByID(root, id string) (*issue.Issue, error) {
 	issues, err := loadAllLocal(root)
