@@ -42,13 +42,15 @@ var deleteCmd = &cobra.Command{
 				fmt.Printf("%s #%d from GitHub\n", color.RedString("Deleted"), iss.Number)
 			}
 
-			// Clean up originals snapshot if present
-			origPath := filepath.Join(originalsDir(root), fmt.Sprintf("%d.md", iss.Number))
-			_ = os.Remove(origPath)
 		}
 
 		if err := os.Remove(iss.Path); err != nil {
 			return err
+		}
+
+		if iss.Number != 0 {
+			origPath := filepath.Join(originalsDir(root), fmt.Sprintf("%d.md", iss.Number))
+			_ = os.Remove(origPath)
 		}
 
 		fmt.Printf("%s %s: %s\n", color.RedString("Deleted"), args[0], iss.Title)
