@@ -31,6 +31,10 @@ var viewCmd = &cobra.Command{
 			return err
 		}
 
+		if viewWebFlag && viewCommentsFlag {
+			return fmt.Errorf("--web and --comments are mutually exclusive")
+		}
+
 		if viewWebFlag {
 			if iss.Number == 0 {
 				return fmt.Errorf("issue %s is local-only and has no GitHub URL", idFromPath(iss.Path))
@@ -55,6 +59,9 @@ var viewCmd = &cobra.Command{
 		}
 
 		parts := strings.Fields(editor)
+		if len(parts) == 0 {
+			return fmt.Errorf("no editor set: define $VISUAL or $EDITOR")
+		}
 		c := exec.Command(parts[0], append(parts[1:], iss.Path)...)
 		c.Stdin = os.Stdin
 		c.Stdout = os.Stdout

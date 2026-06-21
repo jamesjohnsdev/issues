@@ -144,6 +144,18 @@ func captureStdout(t *testing.T, fn func()) string {
 	return buf.String()
 }
 
+func TestDraftCommentBodyWhitespaceEditor(t *testing.T) {
+	t.Run("whitespace-only EDITOR returns error instead of panic", func(t *testing.T) {
+		t.Setenv("VISUAL", "")
+		t.Setenv("EDITOR", "   ")
+
+		_, err := draftCommentBody()
+		if err == nil {
+			t.Error("expected error for whitespace-only EDITOR, got nil")
+		}
+	})
+}
+
 func TestIDFromPath(t *testing.T) {
 	tests := []struct {
 		path string
