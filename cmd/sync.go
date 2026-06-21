@@ -22,23 +22,43 @@ var syncCmd = &cobra.Command{
 			return err
 		}
 
-		// Step 1: push any new T-numbered issues
+		// Step 1: push any new T-numbered issues in parallel
 		local, err := loadAllLocal(root)
 		if err != nil {
 			return err
 		}
-		newCount := 0
+
+		var newIssues []*issue.Issue
 		for _, iss := range local {
 			if iss.Number == 0 {
-				fmt.Printf("Pushing new issue: %s\n", color.CyanString(iss.Title))
-				if err := pushOne(root, iss); err != nil {
-					return err
-				}
-				newCount++
+				newIssues = append(newIssues, iss)
 			}
 		}
-		if newCount > 0 {
-			fmt.Printf("%s %d new issue(s)\n\n", color.GreenString("Pushed"), newCount)
+
+		if len(newIssues) > 0 {
+			const concurrency = 10
+			sem := make(chan struct{}, concurrency)
+			var wg sync.WaitGroup
+			errCh := make(chan error, len(newIssues))
+
+			for _, iss := range newIssues {
+				wg.Add(1)
+				sem <- struct{}{}
+				go func(iss *issue.Issue) {
+					defer wg.Done()
+					defer func() { <-sem }()
+					fmt.Printf("Pushing new issue: %s\n", color.CyanString(iss.Title))
+					if err := pushOne(root, iss); err != nil {
+						errCh <- err
+					}
+				}(iss)
+			}
+			wg.Wait()
+			close(errCh)
+			if err := <-errCh; err != nil {
+				return err
+			}
+			fmt.Printf("%s %d new issue(s)\n\n", color.GreenString("Pushed"), len(newIssues))
 		}
 
 		// Reload — T-issues now have real numbers

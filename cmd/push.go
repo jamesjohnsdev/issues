@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/fatih/color"
@@ -35,13 +37,12 @@ var pushCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		pushed := 0
+
+		// Serial filter pass — cheap disk reads, avoids concurrent isModified races.
+		var jobs []*issue.Issue
 		for _, iss := range issues {
 			if iss.Number == 0 {
-				if err := pushOne(root, iss); err != nil {
-					return err
-				}
-				pushed++
+				jobs = append(jobs, iss)
 				continue
 			}
 			mod, err := isModified(root, iss)
@@ -49,19 +50,41 @@ var pushCmd = &cobra.Command{
 				return err
 			}
 			if mod {
+				jobs = append(jobs, iss)
+			}
+		}
+
+		if len(jobs) == 0 {
+			_, err := color.New(color.FgHiBlack).Println("Nothing to push.")
+			return err
+		}
+
+		const concurrency = 10
+		sem := make(chan struct{}, concurrency)
+		var wg sync.WaitGroup
+		errCh := make(chan error, len(jobs))
+		var pushed atomic.Int32
+
+		for _, iss := range jobs {
+			wg.Add(1)
+			sem <- struct{}{}
+			go func(iss *issue.Issue) {
+				defer wg.Done()
+				defer func() { <-sem }()
 				if err := pushOne(root, iss); err != nil {
-					return err
+					errCh <- err
+					return
 				}
-				pushed++
-			}
+				pushed.Add(1)
+			}(iss)
 		}
-		if pushed == 0 {
-			if _, err := color.New(color.FgHiBlack).Println("Nothing to push."); err != nil {
-				return err
-			}
-		} else {
-			fmt.Printf("%s %d issue(s)\n", color.GreenString("Pushed"), pushed)
+		wg.Wait()
+		close(errCh)
+		if err := <-errCh; err != nil {
+			return err
 		}
+
+		fmt.Printf("%s %d issue(s)\n", color.GreenString("Pushed"), pushed.Load())
 		return nil
 	},
 }
