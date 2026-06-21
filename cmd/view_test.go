@@ -185,4 +185,39 @@ func TestViewWeb(t *testing.T) {
 			t.Errorf("expected 'local-only' in error, got: %v", err)
 		}
 	})
+
+	t.Run("web and comments flags are mutually exclusive", func(t *testing.T) {
+		parent := makeProjectDir(t, []issueFixture{
+			{"1-my-issue.md", issue.Issue{Number: 1, Title: "My issue", State: "open"}},
+		})
+		chdirTo(t, parent)
+		resetViewFlags(t)
+		viewWebFlag = true
+		viewCommentsFlag = true
+
+		err := viewCmd.RunE(viewCmd, []string{"1"})
+		if err == nil {
+			t.Error("expected error when both --web and --comments are set, got nil")
+		}
+		if !strings.Contains(err.Error(), "mutually exclusive") {
+			t.Errorf("expected 'mutually exclusive' in error, got: %v", err)
+		}
+	})
+}
+
+func TestViewWhitespaceEditor(t *testing.T) {
+	t.Run("whitespace-only EDITOR returns error instead of panic", func(t *testing.T) {
+		parent := makeProjectDir(t, []issueFixture{
+			{"1-my-issue.md", issue.Issue{Number: 1, Title: "My issue", State: "open"}},
+		})
+		chdirTo(t, parent)
+		resetViewFlags(t)
+		t.Setenv("VISUAL", "")
+		t.Setenv("EDITOR", "   ")
+
+		err := viewCmd.RunE(viewCmd, []string{"1"})
+		if err == nil {
+			t.Error("expected error for whitespace-only EDITOR, got nil")
+		}
+	})
 }

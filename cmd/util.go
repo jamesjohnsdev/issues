@@ -154,6 +154,9 @@ func draftCommentBody() (string, error) {
 	}
 
 	parts := strings.Fields(editor)
+	if len(parts) == 0 {
+		return "", fmt.Errorf("no editor set: define $VISUAL or $EDITOR")
+	}
 	c := exec.Command(parts[0], append(parts[1:], tmpPath)...)
 	c.Stdin = os.Stdin
 	c.Stdout = os.Stdout
